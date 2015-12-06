@@ -1,0 +1,21 @@
+# This is config file!
+
+hub:
+  world:
+  x:
+  y:
+  z:
+  yaw:
+  pitch:
+
+# "en" or "jp"
+ChatLanguage: en
+
+Event:
+  ChangeHealth: true
+  ChangeEXP: true
+  ChangeLevel: true
+  DamageToEntity: true
+  PlayerDeath: true
+
+RecoveryBed: true
