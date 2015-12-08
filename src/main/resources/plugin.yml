@@ -14,7 +14,7 @@ commands:
    sethub:
       description: sethub command.
       aliases: [setlobby, lobbyset, hubset]
-      usage: /<command>
+      usage: /<command> {<X> <Y> <Z> <Yaw> <Pitch>}
       permission: civncraft.sethub
       permission-message: You don't have permission <permission>!
    hubloc:
@@ -32,25 +32,14 @@ commands:
    asiba:
       description: asiba command.
       aliases: [a, ashiba, footing]
-      usage: /<command>
+      usage: /<command> <BlockID> <Amount> or /<command> to <BlockID>
       permission: civncraft.asiba
-      permission-message: You don't have permission <permission>!
-   lang:
-      description: language command.
-      aliases: language
-      usage: /<command>
-      permission: civncraft.language
       permission-message: You don't have permission <permission>!
    civn:
       description: infomation command.
       aliases: civncraft
       usage: /<command>
       permission: civncraft.info
-      permission-message: You don't have permission <permission>!
-   test:
-      description: test command.
-      usage: /<command>
-      permission: civncraft.test
       permission-message: You don't have permission <permission>!
 permissions:
    civncraft.*:
@@ -61,7 +50,6 @@ permissions:
        civncraft.hubloc: true
        civncraft.seppuku: true
        civncraft.asiba: true
-       civncraft.language: true
        civncraft.info: true
    civncraft.hub:
      description: Hub command.
@@ -77,9 +65,6 @@ permissions:
      default: true
    civncraft.asiba:
      description: Create asiba command.
-     default: op
-   civncraft.language:
-     description: Change language command.
      default: op
    civncraft.info:
      description: Show infomation command.

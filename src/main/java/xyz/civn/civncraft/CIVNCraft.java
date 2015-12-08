@@ -7,17 +7,15 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.EntityType;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -46,95 +44,65 @@ public class CIVNCraft extends JavaPlugin implements Listener
 	static final ChatColor WHITE    = ChatColor.WHITE;
 	static final ChatColor YELOW    = ChatColor.YELLOW;
 
-	EntityType Sheep = EntityType.SHEEP;
-
 	static String prefix = GRAY + "[" + B + BLUE + "CIVNCraft" + R + GRAY + "] ";
+
+	static String UP = RED + "Unnecessary parameters!";
+	static String FC = RED + "Can't run this command from console!";
 
 	@Override
 	public void onEnable()
 	{
 		this.saveDefaultConfig();
 		getServer().getPluginManager().registerEvents(this, this);
-
-		if (!(this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp") | this.getConfig().getString("ChatLanguage").equalsIgnoreCase("en")))
-		{
-			this.getConfig().set("ChatLanguage", "en");
-
-			/*コンフィグファイルを保存、リロード*/
-			this.saveDefaultConfig();
-			this.reloadConfig();
-			return;
-		}
-
-		else
-		{
-			return;
-		}
+		return;
 	}
 
 	@SuppressWarnings({ "deprecation", "unused" })
 	@Override
 	public boolean onCommand (CommandSender sender, Command cmd, String commandLabel, String[] args)
 	{
+		FileConfiguration cf = this.getConfig();
+
 		/*「/hub」コマンド*/
 		if (cmd.getName().equalsIgnoreCase("hub"))
 		{
-			if (sender instanceof Player)
+			if (!(sender instanceof Player))
 			{
-				if (args.length == 0)
+				/*コマンドの実行元がプレイヤーではないとき*/
+				sender.sendMessage(prefix + FC);
+				return false;
+			}
+
+			if (args.length == 0)
+			{
+				String hubW =  cf.getString("hub.world");
+				double hubX =  cf.getDouble("hub.x");
+				double hubY =  cf.getDouble("hub.y");
+				double hubZ =  cf.getDouble("hub.z");
+				float hubYAW = (float) cf.getDouble("hub.yaw");
+				float hubPITCH = (float) cf.getDouble("hub.pitch");
+
+				/*プレイヤーを取得*/
+				Player p = (Player) sender;
+
+				/*ハブが設定されていない（ワールドがnull）だったとき*/
+				if (hubW == null)
 				{
-					String hubW =  this.getConfig().getString("hub.world");
-					double hubX =  this.getConfig().getDouble("hub.x");
-					double hubY =  this.getConfig().getDouble("hub.y");
-					double hubZ =  this.getConfig().getDouble("hub.z");
-					float hubYAW = (float) this.getConfig().getDouble("hub.yaw");
-					float hubPITCH = (float) this.getConfig().getDouble("hub.pitch");
-
-					/*プレイヤーとそのプレイヤーがいるワールドを取得*/
-					Player p = (Player) sender;
-
-					/*ハブが設定されていない（ワールドがnull）だったとき*/
-					if (hubW == null)
-					{
-						/*言語設定が日本語（jp）だったとき*/
-						if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-						{
-							sender.sendMessage(prefix + RED + "ハブが設定されていません！");
-							sender.sendMessage(prefix + RED + "ハブを設定してください！");
-							return true;
-						}
-						sender.sendMessage(prefix + RED + "Hub wasn't set!");
-						sender.sendMessage(prefix + RED + "Please set hub!");
-						return true;
-					}
-
-					/*取得プレイヤーをテレポート*/
-					Location HUB = new Location (Bukkit.getWorld (hubW), hubX, hubY, hubZ, hubYAW, hubPITCH);
-					p.teleport(HUB);
-					return true;
+					sender.sendMessage(prefix + RED + "Hub wasn't set!");
+					sender.sendMessage(prefix + RED + "Please set hub!");
+					return false;
 				}
 
-				/*余計な引数がついているとき*/
-				/*言語設定が日本語（jp）だったとき*/
-				if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-				{
-					sender.sendMessage(prefix + RED + "不要なパラメータ！");
-				}
-
-				sender.sendMessage(prefix + RED + "Unnecessary parameters!");
+				/*configから取得した座標をロケーションにし、そこにプレイヤーをテレポート*/
+				Location HUB = new Location (Bukkit.getWorld (hubW), hubX, hubY, hubZ, hubYAW, hubPITCH);
+				p.teleport(HUB);
 				return true;
 			}
 
-			/*コマンドの実行元がプレイヤーではないとき
-			 *言語設定が日本語（jp）だったとき*/
-			if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-			{
-				sender.sendMessage(prefix + RED + "このコマンドはコンソールから実行できません！");
-				return true;
-			}
+			/*余計な引数がついているとき*/
+			sender.sendMessage(prefix + UP);
+			return false;
 
-			sender.sendMessage(prefix + RED + "Can't run this command from console!");
-			return true;
 		}
 
 		/*「/sethub」コマンド*/
@@ -142,16 +110,9 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		{
 			if (!(sender instanceof Player))
 			{
-				/*コマンドの実行元がプレイヤーではないとき
-				 *言語設定が日本語（jp）だったとき*/
-				if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-				{
-					sender.sendMessage(prefix + RED + "このコマンドはコンソールから実行できません！");
-					return true;
-				}
-
-				sender.sendMessage(prefix + RED + "Can't run this command from console!");
-				return true;
+				/*コマンドの実行元がプレイヤーではないとき*/
+				sender.sendMessage(prefix + FC);
+				return false;
 			}
 
 			if (args.length == 0)
@@ -166,26 +127,18 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				double rPITCH = p.getLocation().getPitch();
 
 				/*取得した座標をコンフィグファイルに保存*/
-				this.getConfig().set("hub.world", p.getWorld().getName());
-				this.getConfig().set("hub.x", rX);
-				this.getConfig().set("hub.y", rY);
-				this.getConfig().set("hub.z", rZ);
-				this.getConfig().set("hub.yaw", rYAW);
-				this.getConfig().set("hub.pitch", rPITCH);
+				cf.set("hub.world", p.getWorld().getName());
+				cf.set("hub.x", rX);
+				cf.set("hub.y", rY);
+				cf.set("hub.z", rZ);
+				cf.set("hub.yaw", rYAW);
+				cf.set("hub.pitch", rPITCH);
 
 				/*コンフィグファイルを保存、リロード*/
 				this.saveConfig();
 				this.reloadConfig();
 
-				/*報告
-				 *言語設定が日本語（jp）だったとき*/
-				if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-				{
-					Bukkit.getServer().broadcastMessage(prefix + AQUA + "ハブの位置が " + RED + sender.getName() + AQUA + " によって変更されました！");
-					Bukkit.getServer().broadcastMessage(prefix + GREEN + "/hubloc " + AQUA + ">>> ハブの座標を見ることができます！");
-					return true;
-				}
-
+				/*報告*/
 				Bukkit.getServer().broadcastMessage(prefix + AQUA + "Hub location has changed by " + RED + sender.getName() + AQUA + "!");
 				Bukkit.getServer().broadcastMessage(prefix + GREEN + "/hubloc " + AQUA + ">>> You can see now hub location!");
 				return true;
@@ -198,7 +151,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				if (w != null)
 				{
 					/*入力した座標をコンフィグファイルに保存*/
-					this.getConfig().set("hub.world", args[0]);
+					cf.set("hub.world", args[0]);
 
 					try
 					{
@@ -209,62 +162,42 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 					catch (NumberFormatException e)
 					{
-						if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-						{
-							sender.sendMessage(prefix + RED + "正しい数値を入力してください！");
-							return true;
-						}
-
-						sender.sendMessage(prefix + RED + "Please enter the correct number!");
-						return true;
+						sender.sendMessage(prefix + RED + "Please enter the coordinates!");
+						return false;
 					}
 
 					Double rX = Double.parseDouble (args[1]);
 					Double rY = Double.parseDouble (args[2]);
 					Double rZ = Double.parseDouble (args[3]);
 
-					this.getConfig().set("hub.x", rX);
-					this.getConfig().set("hub.y", rY);
-					this.getConfig().set("hub.z", rZ);
-					this.getConfig().set("hub.yaw", 0);
-					this.getConfig().set("hub.pitch", 0);
+					/*取得した座標をコンフィグファイルに保存*/
+					cf.set("hub.x", rX);
+					cf.set("hub.y", rY);
+					cf.set("hub.z", rZ);
+					cf.set("hub.yaw", 0);
+					cf.set("hub.pitch", 0);
 					this.saveConfig();
 					this.reloadConfig();
 
-					/*報告
-					 *言語設定が日本語（jp）だったとき*/
-					if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-					{
-						Bukkit.getServer().broadcastMessage(prefix + AQUA + "ハブの位置が " + RED + sender.getName() + AQUA + " によって変更されました！");
-						Bukkit.getServer().broadcastMessage(prefix + GREEN + "/hubloc " + AQUA + ">>> ハブの座標を見ることができます！");
-						return true;
-					}
-
+					/*報告*/
 					Bukkit.getServer().broadcastMessage(prefix + AQUA + "Hub location has changed by " + RED + sender.getName() + AQUA + "!");
 					Bukkit.getServer().broadcastMessage(prefix + GREEN + "/hubloc " + AQUA + ">>> You can see now hub location!");
 					return true;
 				}
 
-				/*入力したワールドが存在しないとき
-				 *言語設定が日本語（jp）だったとき*/
-				if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-				{
-					Bukkit.getServer().broadcastMessage(prefix + GOLD + args[0] + " というワールドは存在しません！");
-					return true;
-				}
-
+				/*入力したワールドが存在しないとき*/
 				Bukkit.getServer().broadcastMessage(prefix + GOLD + args[0] + " doesn't exist!");
-				return true;
+				return false;
 			}
 
 			else if (args.length == 6)
 			{
-				World w = Bukkit.getWorld(args[0]);
+				World w = Bukkit.getWorld (args[0]);
 
 				if (w != null)
 				{
 					/*入力した座標をコンフィグファイルに保存*/
-					this.getConfig().set("hub.world", args[0]);
+					cf.set("hub.world", args[0]);
 
 					try
 					{
@@ -277,14 +210,8 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 					catch (NumberFormatException e)
 					{
-						if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-						{
-							sender.sendMessage(prefix + RED + "正しい数値を入力してください！");
-							return true;
-						}
-
-						sender.sendMessage(prefix + RED + "Please enter the correct number!");
-						return true;
+						sender.sendMessage(prefix + RED + "Please enter the coordinates!");
+						return false;
 					}
 
 					Double rX = Double.parseDouble (args[1]);
@@ -293,44 +220,29 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					Double rYaw = Double.parseDouble (args[4]);
 					Double rPitch = Double.parseDouble (args[5]);
 
-					this.getConfig().set("hub.x", rX);
-					this.getConfig().set("hub.y", rY);
-					this.getConfig().set("hub.z", rZ);
-					this.getConfig().set("hub.yaw", rYaw);
-					this.getConfig().set("hub.pitch", rPitch);
+					cf.set("hub.x", rX);
+					cf.set("hub.y", rY);
+					cf.set("hub.z", rZ);
+					cf.set("hub.yaw", rYaw);
+					cf.set("hub.pitch", rPitch);
 					this.saveConfig();
 					this.reloadConfig();
 
-					/*報告
-					 *言語設定が日本語（jp）だったとき*/
-					if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-					{
-						Bukkit.getServer().broadcastMessage(prefix + AQUA + "ハブの位置が " + RED + sender.getName() + AQUA + " によって変更されました！");
-						Bukkit.getServer().broadcastMessage(prefix + GREEN + "/hubloc " + AQUA + ">>> ハブの座標を見ることができます！");
-						return true;
-					}
-
+					/*報告*/
 					Bukkit.getServer().broadcastMessage(prefix + AQUA + "Hub location has changed by " + RED + sender.getName() + AQUA + "!");
 					Bukkit.getServer().broadcastMessage(prefix + GREEN + "/hubloc " + AQUA + ">>> You can see now hub location!");
 					return true;
 				}
 
-				/*入力したワールドが存在しないとき
-				 *言語設定が日本語（jp）だったとき*/
-				if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-				{
-					Bukkit.getServer().broadcastMessage(prefix + GOLD + args[0] + " というワールドは存在しません！");
-					return true;
-				}
-
+				/*入力したワールドが存在しないとき*/
 				Bukkit.getServer().broadcastMessage(prefix + GOLD + args[0] + " doesn't exist!");
-				return true;
+				return false;
 			}
 
 			sender.sendMessage(prefix);
 			sender.sendMessage(GOLD + "Example: " + AQUA + "/sethub <WorldName> <X> <Y> <Z> or");
 			sender.sendMessage(         AQUA + "/sethub <WorldName> <X> <Y> <Z> <Yaw> <Pitch>");
-			return true;
+			return false;
 
 		}
 
@@ -340,12 +252,12 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			if (args.length == 0)
 			{
 				/*コンフィグファイルからハブのx~pitch座標を取得*/
-				String W = this.getConfig().getString("hub.world");
-				double X = this.getConfig().getDouble("hub.x");
-				double Y = this.getConfig().getDouble("hub.y");
-				double Z = this.getConfig().getDouble("hub.z");
-				float YAW = (float) this.getConfig().getDouble("hub.yaw");
-				float PITCH = (float) this.getConfig().getDouble("hub.pitch");
+				String W = cf.getString("hub.world");
+				double X = cf.getDouble("hub.x");
+				double Y = cf.getDouble("hub.y");
+				double Z = cf.getDouble("hub.z");
+				float YAW = (float) cf.getDouble("hub.yaw");
+				float PITCH = (float) cf.getDouble("hub.pitch");
 
 				/*報告*/
 				sender.sendMessage(prefix);
@@ -358,15 +270,9 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				return true;
 			}
 
-			/*余計な引数がついているとき
-			 *言語設定が日本語（jp）だったとき*/
-			if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-			{
-				sender.sendMessage(prefix + RED + "不要なパラメータ！");
-			}
-
-			sender.sendMessage(prefix + RED + "Unnecessary parameters!");
-			return true;
+			/*余計な引数がついているとき*/
+			sender.sendMessage(prefix + UP);
+			return false;
 
 		}
 
@@ -376,14 +282,8 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			if (!(sender instanceof Player))
 			{
 				/*コマンドの実行元がプレイヤーではないとき*/
-				if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-				{
-					sender.sendMessage(prefix + RED + "このコマンドはコンソールから実行できません！");
-					return true;
-				}
-
-				sender.sendMessage(prefix + RED + "Can't run this command from console!");
-				return true;
+				sender.sendMessage(prefix + FC);
+				return false;
 			}
 
 			if (args.length == 0)
@@ -396,15 +296,9 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				return true;
 			}
 
-			/*余計な引数がついているとき
-			 *言語設定が日本語（jp）だったとき*/
-			if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-			{
-				sender.sendMessage(prefix + RED + "不要なパラメータ！");
-			}
-
-			sender.sendMessage(prefix + RED + "Unnecessary parameters!");
-			return true;
+			/*余計な引数がついているとき*/
+			sender.sendMessage(prefix + UP);
+			return false;
 
 		}
 
@@ -413,15 +307,8 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		{
 			if (!(sender instanceof Player))
 			{
-				/*コマンドの実行元がプレイヤーではないとき*/
-				if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-				{
-					sender.sendMessage(prefix + RED + "このコマンドはコンソールから実行できません！");
-					return true;
-				}
-
-				sender.sendMessage(prefix + RED + "Can't run this command from console!");
-				return true;
+				sender.sendMessage(prefix + FC);
+				return false;
 			}
 
 			/*コマンドのパラメータが1か2だったとき*/
@@ -446,13 +333,13 @@ public class CIVNCraft extends JavaPlugin implements Listener
 						/*args[1]からマテリアルを取得*/
 						Material m = Material.getMaterial(block);
 
-						/*取得に失敗したらfalseを返す*/
+						/*取得に失敗したら終了*/
 						if (m == null)
 						{
 							sender.sendMessage(prefix + RED + args[1] + " doesn't exist!");
 							sender.sendMessage(GREEN + "     >>>Is it a Block?");
 							sender.sendMessage(GREEN + "     >>>Isn't it wrong Name?");
-							return true;
+							return false;
 						}
 
 						for (;;)
@@ -473,13 +360,13 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 					Material m = Material.getMaterial(block);
 
-					/*取得に失敗したらfalseを返す*/
+					/*取得に失敗したら終了*/
 					if (m == null)
 					{
 						sender.sendMessage(prefix + RED + args[1] + " doesn't exist!");
 						sender.sendMessage(GREEN + "     >>>Is it a Block?");
 						sender.sendMessage(GREEN + "     >>>Isn't it wrong ID?");
-						return true;
+						return false;
 					}
 
 					for (;;)
@@ -515,7 +402,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 						sender.sendMessage(prefix + RED + args[0] + " doesn't exist!");
 						sender.sendMessage(GREEN + "     >>>Is it a Block?");
 						sender.sendMessage(GREEN + "     >>>Isn't it wrong Name?");
-						return true;
+						return false;
 					}
 
 					/*コマンドパラメータが2のとき*/
@@ -530,14 +417,8 @@ public class CIVNCraft extends JavaPlugin implements Listener
 						/*数値ではなかったとき*/
 						catch (NumberFormatException er)
 						{
-							if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-							{
-								sender.sendMessage(prefix + RED + "無効なパラメータ！");
-								return true;
-							}
-
 							sender.sendMessage(prefix + RED + "Invaild parameters!");
-							return true;
+							return false;
 						}
 
 						/*args[1]をint型に変換*/
@@ -558,7 +439,6 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					/*ブロックをプレイヤーのY座標 - 1の位置にセットする*/
 					l.setY(l.getY() - 1);
 					l.getBlock().setType(m);
-
 					return true;
 
 				}
@@ -575,7 +455,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					sender.sendMessage(prefix + RED + "ItemID [" + AQUA + block + RED + "]" + " doesn't exist!");
 					sender.sendMessage(GREEN + "     >>>Is it a Block?");
 					sender.sendMessage(GREEN + "     >>>Isn't it wrong ID?");
-					return true;
+					return false;
 				}
 
 				/*コマンドパラメータが2のとき*/
@@ -587,17 +467,11 @@ public class CIVNCraft extends JavaPlugin implements Listener
 						Integer.parseInt(args[1]);
 					}
 
-					/*数値ではなかったときfalseを返す*/
+					/*数値ではなかったとき終了*/
 					catch (NumberFormatException e)
 					{
-						if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-							{
-								sender.sendMessage(prefix + RED + "無効なパラメータ！");
-								return true;
-							}
-
 						sender.sendMessage(prefix + RED + "Invaild parameters!");
-						return true;
+						return false;
 					}
 
 					/*args[1]をint型に変換*/
@@ -611,7 +485,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 						l.getBlock().setType(m);
 					}
 
-					return true;
+					return false;
 
 				}
 
@@ -621,87 +495,16 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				return true;
 			}
 
-			/*余計な引数がついているとき
-			 *言語設定が日本語（jp）だったとき*/
-			if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-			{
-				sender.sendMessage(prefix + RED + "不要なパラメータ！");
-			}
+			/*余計な引数がついているとき*/
+			sender.sendMessage(prefix + UP);
+			return false;
 
-			sender.sendMessage(prefix + RED + "Unnecessary parameters!");
-			return true;
-
-		}
-
-		/*「/lang」コマンド*/
-		else if (cmd.getName().equalsIgnoreCase("lang"))
-		{
-			if (args.length == 1)
-			{
-				/*引数がjpまたはenだったとき*/
-				if (args[0].equalsIgnoreCase("jp") | args[0].equalsIgnoreCase("en"))
-				{
-					if (args[0].equalsIgnoreCase("jp"))
-					{
-						/*コンフィグファイルを書き換える*/
-						this.getConfig().set("ChatLanguage", "jp");
-						this.saveConfig();
-						this.reloadConfig();
-
-						/*報告*/
-						sender.sendMessage(prefix + GOLD + "言語を日本語に変更しました！");
-						return true;
-					}
-
-					else if (args[0].equalsIgnoreCase("en"))
-					{
-						/*コンフィグファイルを書き換える*/
-						this.getConfig().set("ChatLanguage", "en");
-						this.saveConfig();
-						this.reloadConfig();
-
-						/*報告*/
-						sender.sendMessage(prefix + GOLD + "You changed language to English!");
-						return true;
-					}
-
-					/*引数がjp、en以外だったとき
-					 *言語設定が日本語（jp）だったとき*/
-					if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-					{
-						sender.sendMessage(prefix + RED + args[0] + " という言語は対応しておりません！");
-						return true;
-					}
-
-					sender.sendMessage(prefix + RED + args[0] + " is not supported!");
-					return true;
-				}
-			}
-
-			/*余計な引数がついているとき
-			 *言語設定が日本語（jp）だったとき*/
-			if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-			{
-				sender.sendMessage(prefix + RED + "不要なパラメータ！");
-				return true;
-			}
-
-			sender.sendMessage(prefix + RED + "Unnecessary parameters!");
-			return true;
 		}
 
 		/*「/civn」コマンド*/
 		else if (cmd.getName().equalsIgnoreCase("civn"))
 		{
 			if (args.length == 0)
-			{
-				sender.sendMessage(prefix);
-				sender.sendMessage(GOLD + "Author: " + D_RED + "CIVN");
-				sender.sendMessage(GOLD + "Version: " + D_BLUE + "1.0");
-				return true;
-			}
-
-			else if (args[0].equalsIgnoreCase("info"))
 			{
 				sender.sendMessage(prefix);
 				sender.sendMessage(GOLD + "Author: " + D_RED + "CIVN");
@@ -722,28 +525,23 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					sender.sendMessage(GOLD + "/sethub <World> <X> <Y> <Z> or");
 					sender.sendMessage(GOLD + "/sethub <World> <X> <Y> <Z> <YAW> <PITCH>: " + AQUA + "Set hub at that location!");
 					sender.sendMessage(GOLD + "/hubl: " + AQUA + "Show now hub location!");
-					sender.sendMessage(GOLD + "/lang <(en) or (jp)>: " + AQUA + "Set language!");
 					sender.sendMessage(GOLD + "/seppuku: " + AQUA + "Die...");
 					sender.sendMessage(GOLD + "/asiba <BlockID> <height>: " + AQUA + "Create asiba!");
+					sender.sendMessage(GOLD + "/asiba to <BlockID>: " + AQUA + "Create asiba to hit the bottom!");
 					return true;
 				}
 
 				sender.sendMessage(GOLD + "/civn: " + AQUA + "Show infomation!");
 				sender.sendMessage(GOLD + "/hub: " + AQUA + "Go to hub!");
 				sender.sendMessage(GOLD + "/asiba <BlockID> <height>: " + AQUA + "Create asiba!");
+				sender.sendMessage(GOLD + "/asiba to <BlockID>: " + AQUA + "Create asiba to hit the bottom!");
 				sender.sendMessage(GOLD + "/seppuku: " + AQUA + "Die...");
 				return true;
 			}
 
-			/*余計な引数がついているとき
-			 *言語設定が日本語（jp）だったとき*/
-			if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-			{
-				sender.sendMessage(prefix + RED + "不要なパラメータ！");
-			}
-
-			sender.sendMessage(prefix + RED + "Unnecessary parameters!");
-			return true;
+			/*余計な引数がついているとき*/
+			sender.sendMessage(prefix + UP);
+			return false;
 		}
 
 		return false;
@@ -754,69 +552,24 @@ public class CIVNCraft extends JavaPlugin implements Listener
 	@EventHandler
 	public void onPlayerDeath (PlayerDeathEvent event)
 	{
-		if (this.getConfig().getString("Event.PlayerDeath").equalsIgnoreCase("true"))
+		if (!(this.getConfig().getString("Event.PlayerDeath").equalsIgnoreCase("true")))
 		{
-			String name = event.getEntity().getName();
-
-			Player p = event.getEntity().getPlayer();
-			Player k = p.getKiller();
-
-			/*殺した人がいない場合*/
-			if (k == null)
-			{
-				/*言語設定が日本語（jp）だったとき*/
-				if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-				{
-					event.setDeathMessage(prefix + RED + name + " が死んでしまった！");
-					return;
-				}
-
-				event.setDeathMessage(prefix + RED + name + GOLD + " died!");
-				return;
-			}
-
-			/*言語設定が日本語（jp）だったとき*/
-			if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-			{
-				event.setDeathMessage(prefix + RED + name + GOLD + " は " + RED + k.getName() + GOLD + " によって殺されてしまった！");
-				return;
-			}
-
-			event.setDeathMessage(prefix + RED + name + GOLD + " was killed by " + RED + k.getName());
 			return;
 		}
 
-		return;
+		String name = event.getEntity().getName();
 
-	}
+		Player p = event.getEntity().getPlayer();
+		Player k = p.getKiller();
 
-	/*エンティティにダメージを与えた時のイベント*/
-	@EventHandler
-	public void onDamage (EntityDamageByEntityEvent event)
-	{
-		if (this.getConfig().getString("Event.DamageToEntity").equalsIgnoreCase("true"))
+		/*殺した人がいない場合*/
+		if (k == null)
 		{
-			if (event.getDamager().getType() == EntityType.PLAYER)
-			{
-				String damager = event.getDamager().getName();
-				String damagee = event.getEntity().getName();
-				double damage = event.getDamage();
-
-				/*言語設定が日本語（jp）だったとき*/
-				if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-				{
-					Bukkit.broadcastMessage(prefix + RED + damager + GOLD + " は " + RED + damagee + GOLD + " に " + RED + damage + GOLD + " ポイントのダメージを与えた！");
-					return;
-				}
-
-				Bukkit.broadcastMessage(prefix + RED + damager + GOLD + " gave damage to " + RED + damagee + " " + damage + GOLD + " points!");
-				return;
-			}
-
+			event.setDeathMessage(prefix + D_GREEN + name + GOLD + " died!");
 			return;
-
 		}
 
+		event.setDeathMessage(prefix + D_GREEN + name + GOLD + " was killed by " + RED + k.getName());
 		return;
 
 	}
@@ -825,43 +578,26 @@ public class CIVNCraft extends JavaPlugin implements Listener
 	@EventHandler
 	public void onLevelUp (PlayerLevelChangeEvent event)
 	{
-		if (this.getConfig().getString("Event.ChangeLevel").equalsIgnoreCase("true"))
+		if (!(this.getConfig().getString("Event.ChangeLevel").equalsIgnoreCase("true")))
 		{
-			Player p = event.getPlayer();
-			String pn = p.getName();
-			int newl = event.getNewLevel();
-			int oldl = event.getOldLevel();
-
-			/*レベルが上がった時の処理*/
-			if (newl > oldl)
-			{
-				/*言語設定が日本語（jp）だったとき*/
-				if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-				{
-					Bukkit.broadcastMessage(prefix + RED + pn + GOLD + " は レベル" + RED + oldl + GOLD + "から、レベル" + RED + newl + GOLD + "に上がった！");
-					return;
-				}
-
-				Bukkit.broadcastMessage(prefix + RED + pn + GOLD + " leveled up " + RED + "Lv." + oldl + GOLD + " to " + RED + "Lv." + newl + GOLD + "!");
-				return;
-			}
-
-			/*レベルが下がった時の処理*/
-			if (newl < oldl)
-			{
-				/*言語設定が日本語（jp）だったとき*/
-				if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-				{
-					Bukkit.broadcastMessage(prefix + RED + pn + GOLD + " は レベル" + RED + oldl + GOLD + "から、レベル" + RED + newl + GOLD + "に下がった！");
-					return;
-				}
-
-				Bukkit.broadcastMessage(prefix + RED + pn + GOLD + " leveled down " + RED + "Lv." + oldl + GOLD + " to " + RED + "Lv." + newl + GOLD + "!");
-				return;
-			}
-
 			return;
+		}
 
+		Player p = event.getPlayer();
+		String pn = p.getName();
+		int newl = event.getNewLevel();
+		int oldl = event.getOldLevel();
+
+		/*レベルが上がった時の処理*/
+		if (newl > oldl)
+		{
+			Bukkit.broadcastMessage(prefix + D_GREEN + pn + GOLD + " leveled up " + RED + "Lv." + oldl + GOLD + " to " + RED + "Lv." + newl + GOLD + "!");
+		}
+
+		/*レベルが下がった時の処理*/
+		else if (newl < oldl)
+		{
+			Bukkit.broadcastMessage(prefix + D_GREEN + pn + GOLD + " leveled down " + RED + "Lv." + oldl + GOLD + " to " + RED + "Lv." + newl + GOLD + "!");
 		}
 
 		return;
@@ -872,22 +608,16 @@ public class CIVNCraft extends JavaPlugin implements Listener
 	@EventHandler
 	public void onExpUp (PlayerExpChangeEvent event)
 	{
-		if (this.getConfig().getString("Event.ChangeEXP").equalsIgnoreCase("true"))
+		if (!(this.getConfig().getString("Event.ChangeEXP").equalsIgnoreCase("true")))
 		{
-			Player p = event.getPlayer();
-			String pn = p.getName();
-			int exp = event.getAmount();
-
-			if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-			{
-				Bukkit.broadcastMessage(prefix + RED + pn + GOLD + " は " + RED + exp + GOLD + " の経験値を獲得！");
-				return;
-			}
-
-			Bukkit.broadcastMessage(prefix + RED + pn + GOLD + " got " + RED + exp + GOLD + " EXP!");
 			return;
 		}
 
+		Player p = event.getPlayer();
+		String pn = p.getName();
+		int exp = event.getAmount();
+
+		Bukkit.broadcastMessage(prefix + D_GREEN + pn + GOLD + " got " + RED + exp + GOLD + " EXP!");
 		return;
 
 	}
@@ -896,37 +626,29 @@ public class CIVNCraft extends JavaPlugin implements Listener
 	@EventHandler
 	public void onHealth (PlayerBedLeaveEvent event)
 	{
-		if (this.getConfig().getString("Event.ChangeHealth").equalsIgnoreCase("true"))
+		if (!(this.getConfig().getString("Event.BedHeal").equalsIgnoreCase("true")))
 		{
-			if (this.getConfig().getString("RecoveryBed").equalsIgnoreCase("true"))
-			{
-				Player p = event.getPlayer();
-
-				p.setHealth(20);
-				p.setFoodLevel(20);
-
-				if (this.getConfig().getString("ChatLanguage").equalsIgnoreCase("jp"))
-				{
-					Bukkit.broadcastMessage(prefix + RED + p.getName() + " の体力と空腹度が全回復した！");
-					return;
-				}
-
-				Bukkit.broadcastMessage(prefix + RED + p.getName() + " has completely recovered!");
-				return;
-			}
-
 			return;
-
 		}
 
-		return;
+		Player p = event.getPlayer();
 
+		p.setHealth(20);
+		p.setFoodLevel(20);
+
+		Bukkit.broadcastMessage(prefix + D_GREEN + p.getName() + GOLD + " has completely recovered!");
+		return;
 	}
 
 	/*プレイヤーがゲームに参加した時のイベント*/
 	@EventHandler
 	public void onJoin (PlayerJoinEvent event)
 	{
+		if (!(this.getConfig().getString("Event.JoinMsg").equalsIgnoreCase("true")))
+		{
+			return;
+		}
+
 		Player p = event.getPlayer();
 
 		event.setJoinMessage(prefix + D_GREEN + p.getName() + GOLD + " has joined.");
@@ -937,30 +659,14 @@ public class CIVNCraft extends JavaPlugin implements Listener
 	@EventHandler
 	public void onLeave (PlayerQuitEvent event)
 	{
+		if (!(this.getConfig().getString("Event.LeaveMsg").equalsIgnoreCase("true")))
+		{
+			return;
+		}
+
 		Player p = event.getPlayer();
 
 		event.setQuitMessage(prefix + D_GREEN + p.getName() + GOLD + " has left.");
 		return;
 	}
-
-	/*プレイヤーが移動した時のイベント*/
-	@EventHandler
-	public void onMove (PlayerMoveEvent event) throws InterruptedException
-	{
-		Player p = event.getPlayer();
-		Location l = p.getLocation();
-		Material b = l.getBlock().getType();
-
-		if (p.getInventory().getHelmet().getType() == Material.PUMPKIN)
-		{
-			if (b == Material.AIR) {return;}
-
-			l.getBlock().setType(Material.SNOW);
-			return;
-		}
-
-		return;
-
-	}
-
 }
