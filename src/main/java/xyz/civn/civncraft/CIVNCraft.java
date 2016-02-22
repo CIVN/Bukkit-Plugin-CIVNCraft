@@ -1,16 +1,17 @@
 package xyz.civn.civncraft;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerExpChangeEvent;
@@ -21,55 +22,26 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class CIVNCraft extends JavaPlugin implements Listener
 {
-	static final ChatColor B        = ChatColor.BOLD;
-	static final ChatColor I        = ChatColor.ITALIC;
-	static final ChatColor M        = ChatColor.MAGIC;
-	static final ChatColor R        = ChatColor.RESET;
-	static final ChatColor S        = ChatColor.STRIKETHROUGH;
-	static final ChatColor U        = ChatColor.UNDERLINE;
-	static final ChatColor AQUA     = ChatColor.AQUA;
-	static final ChatColor BLACK    = ChatColor.BLACK;
-	static final ChatColor BLUE     = ChatColor.BLUE;
-	static final ChatColor D_AQUA   = ChatColor.DARK_AQUA;
-	static final ChatColor D_BLUE   = ChatColor.DARK_BLUE;
-	static final ChatColor D_GRAY   = ChatColor.DARK_GRAY;
-	static final ChatColor D_GREEN  = ChatColor.DARK_GREEN;
-	static final ChatColor D_PURPLE = ChatColor.DARK_PURPLE;
-	static final ChatColor D_RED    = ChatColor.DARK_RED;
-	static final ChatColor GOLD     = ChatColor.GOLD;
-	static final ChatColor GRAY     = ChatColor.GRAY;
-	static final ChatColor GREEN    = ChatColor.GREEN;
-	static final ChatColor L_PURPLE = ChatColor.LIGHT_PURPLE;
-	static final ChatColor RED      = ChatColor.RED;
-	static final ChatColor WHITE    = ChatColor.WHITE;
-	static final ChatColor YELOW    = ChatColor.YELLOW;
-
-	static String prefix = GRAY + "[" + B + BLUE + "CIVNCraft" + R + GRAY + "] ";
-
-	static String UP = RED + "Unnecessary parameters!";
-	static String FC = RED + "Can't run this command from console!";
+	static String prefix = C.GRAY + "[" + C.B + C.BLUE + C.B + "CIVNCraft" + C.R + C.GRAY + "] ";
 
 	@Override
 	public void onEnable()
 	{
 		this.saveDefaultConfig();
 		getServer().getPluginManager().registerEvents(this, this);
-		return;
 	}
 
-	@SuppressWarnings({ "deprecation", "unused" })
+	@SuppressWarnings({ "unused", "deprecation" })
 	@Override
 	public boolean onCommand (CommandSender sender, Command cmd, String commandLabel, String[] args)
 	{
 		FileConfiguration cf = this.getConfig();
 
-		/*「/hub」コマンド*/
 		if (cmd.getName().equalsIgnoreCase("hub"))
 		{
 			if (!(sender instanceof Player))
 			{
-				/*コマンドの実行元がプレイヤーではないとき*/
-				sender.sendMessage(prefix + FC);
+				sender.sendMessage(prefix + ErrorMessage.FC);
 				return false;
 			}
 
@@ -82,14 +54,13 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				float hubYAW = (float) cf.getDouble("hub.yaw");
 				float hubPITCH = (float) cf.getDouble("hub.pitch");
 
-				/*プレイヤーを取得*/
 				Player p = (Player) sender;
 
 				/*ハブが設定されていない（ワールドがnull）だったとき*/
 				if (hubW == null)
 				{
-					sender.sendMessage(prefix + RED + "Hub wasn't set!");
-					sender.sendMessage(prefix + RED + "Please set hub!");
+					sender.sendMessage(prefix + C.RED + "Hub wasn't set!");
+					sender.sendMessage(prefix + C.RED + "Please set hub!");
 					return false;
 				}
 
@@ -99,25 +70,23 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				return true;
 			}
 
-			/*余計な引数がついているとき*/
-			sender.sendMessage(prefix + UP);
+
+			sender.sendMessage(prefix + ErrorMessage.UP);
 			return false;
 
 		}
 
-		/*「/sethub」コマンド*/
 		else if (cmd.getName().equalsIgnoreCase("sethub"))
 		{
 			if (!(sender instanceof Player))
 			{
-				/*コマンドの実行元がプレイヤーではないとき*/
-				sender.sendMessage(prefix + FC);
+				sender.sendMessage(prefix + ErrorMessage.FC);
 				return false;
 			}
 
 			if (args.length == 0)
 			{
-				/*プレイヤーのx~pitch座標を取得*/
+				/*プレイヤーの座標を取得*/
 				Player p = (Player) sender;
 
 				double rX = p.getLocation().getX();
@@ -139,8 +108,8 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				this.reloadConfig();
 
 				/*報告*/
-				Bukkit.getServer().broadcastMessage(prefix + AQUA + "Hub location has changed by " + RED + sender.getName() + AQUA + "!");
-				Bukkit.getServer().broadcastMessage(prefix + GREEN + "/hubloc " + AQUA + ">>> You can see now hub location!");
+				Bukkit.getServer().broadcastMessage(prefix + C.AQUA + "Hub location has changed by " + C.RED + sender.getName() + C.AQUA + "!");
+				Bukkit.getServer().broadcastMessage(prefix + C.GREEN + "/hubloc " + C.AQUA + ">>> You can see now hub location!");
 				return true;
 			}
 
@@ -162,7 +131,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 					catch (NumberFormatException e)
 					{
-						sender.sendMessage(prefix + RED + "Please enter the coordinates!");
+						sender.sendMessage(prefix + C.RED + "Please enter the coordinates!");
 						return false;
 					}
 
@@ -180,13 +149,13 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					this.reloadConfig();
 
 					/*報告*/
-					Bukkit.getServer().broadcastMessage(prefix + AQUA + "Hub location has changed by " + RED + sender.getName() + AQUA + "!");
-					Bukkit.getServer().broadcastMessage(prefix + GREEN + "/hubloc " + AQUA + ">>> You can see now hub location!");
+					Bukkit.getServer().broadcastMessage(prefix + C.AQUA + "Hub location has changed by " + C.RED + sender.getName() + C.AQUA + "!");
+					Bukkit.getServer().broadcastMessage(prefix + C.GREEN + "/hubloc " + C.AQUA + ">>> You can see now hub location!");
 					return true;
 				}
 
 				/*入力したワールドが存在しないとき*/
-				Bukkit.getServer().broadcastMessage(prefix + GOLD + args[0] + " doesn't exist!");
+				Bukkit.getServer().broadcastMessage(prefix + C.GOLD + args[0] + " doesn't exist!");
 				return false;
 			}
 
@@ -210,7 +179,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 					catch (NumberFormatException e)
 					{
-						sender.sendMessage(prefix + RED + "Please enter the coordinates!");
+						sender.sendMessage(prefix + C.RED + "Please enter the coordinates!");
 						return false;
 					}
 
@@ -229,19 +198,19 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					this.reloadConfig();
 
 					/*報告*/
-					Bukkit.getServer().broadcastMessage(prefix + AQUA + "Hub location has changed by " + RED + sender.getName() + AQUA + "!");
-					Bukkit.getServer().broadcastMessage(prefix + GREEN + "/hubloc " + AQUA + ">>> You can see now hub location!");
+					Bukkit.getServer().broadcastMessage(prefix + C.AQUA + "Hub location has changed by " + C.RED + sender.getName() + C.AQUA + "!");
+					Bukkit.getServer().broadcastMessage(prefix + C.GREEN + "/hubloc " + C.AQUA + ">>> You can see now hub location!");
 					return true;
 				}
 
 				/*入力したワールドが存在しないとき*/
-				Bukkit.getServer().broadcastMessage(prefix + GOLD + args[0] + " doesn't exist!");
+				Bukkit.getServer().broadcastMessage(prefix + C.GOLD + args[0] + " doesn't exist!");
 				return false;
 			}
 
 			sender.sendMessage(prefix);
-			sender.sendMessage(GOLD + "Example: " + AQUA + "/sethub <WorldName> <X> <Y> <Z> or");
-			sender.sendMessage(         AQUA + "/sethub <WorldName> <X> <Y> <Z> <Yaw> <Pitch>");
+			sender.sendMessage(C.GOLD + "Example: " + C.AQUA + "/sethub <WorldName> <X> <Y> <Z> or");
+			sender.sendMessage(         C.AQUA + "/sethub <WorldName> <X> <Y> <Z> <Yaw> <Pitch>");
 			return false;
 
 		}
@@ -261,17 +230,17 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 				/*報告*/
 				sender.sendMessage(prefix);
-				sender.sendMessage(GREEN + "World: " + AQUA + W);
-				sender.sendMessage(GOLD + "X: " + AQUA + X);
-				sender.sendMessage(GOLD + "Y: " + AQUA + Y);
-				sender.sendMessage(GOLD + "Z: " + AQUA + Z);
-				sender.sendMessage(GOLD + "Yaw: " + AQUA + YAW);
-				sender.sendMessage(GOLD + "Pitch: " + AQUA + PITCH);
+				sender.sendMessage(C.GREEN + "World: " + C.AQUA + W);
+				sender.sendMessage(C.GOLD + "X: " + C.AQUA + X);
+				sender.sendMessage(C.GOLD + "Y: " + C.AQUA + Y);
+				sender.sendMessage(C.GOLD + "Z: " + C.AQUA + Z);
+				sender.sendMessage(C.GOLD + "Yaw: " + C.AQUA + YAW);
+				sender.sendMessage(C.GOLD + "Pitch: " + C.AQUA + PITCH);
 				return true;
 			}
 
 			/*余計な引数がついているとき*/
-			sender.sendMessage(prefix + UP);
+			sender.sendMessage(prefix + ErrorMessage.UP);
 			return false;
 
 		}
@@ -282,7 +251,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			if (!(sender instanceof Player))
 			{
 				/*コマンドの実行元がプレイヤーではないとき*/
-				sender.sendMessage(prefix + FC);
+				sender.sendMessage(prefix + ErrorMessage.FC);
 				return false;
 			}
 
@@ -297,9 +266,52 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			}
 
 			/*余計な引数がついているとき*/
-			sender.sendMessage(prefix + UP);
+			sender.sendMessage(prefix + ErrorMessage.UP);
 			return false;
 
+		}
+
+		/*「/civn」コマンド*/
+		else if (cmd.getName().equalsIgnoreCase("civn"))
+		{
+			if (args.length == 0)
+			{
+				sender.sendMessage(prefix);
+				sender.sendMessage(C.GOLD + "Author: " + C.D_RED + "CIVN");
+				sender.sendMessage(C.GOLD + "Version: " + C.D_BLUE + "1.0");
+				return true;
+			}
+
+			else if (args[0].equalsIgnoreCase("help") | args[0].equalsIgnoreCase("?"))
+			{
+				Player p = (Player) sender;
+
+				if (p.isOp())
+				{
+					sender.sendMessage(prefix);
+					sender.sendMessage(C.GOLD + "/civn: " + C.AQUA + "Show infomation!");
+					sender.sendMessage(C.GOLD + "/hub: " + C.AQUA + "Go to hub!");
+					sender.sendMessage(C.GOLD + "/sethub: " + C.AQUA + "Set hub at your location!");
+					sender.sendMessage(C.GOLD + "/sethub <World> <X> <Y> <Z> or");
+					sender.sendMessage(C.GOLD + "/sethub <World> <X> <Y> <Z> <YAW> <PITCH>: " + C.AQUA + "Set hub at that location!");
+					sender.sendMessage(C.GOLD + "/hubl: " + C.AQUA + "Show now hub location!");
+					sender.sendMessage(C.GOLD + "/seppuku: " + C.AQUA + "Die...");
+					sender.sendMessage(C.GOLD + "/asiba <BlockID> <height>: " + C.AQUA + "Create asiba!");
+					sender.sendMessage(C.GOLD + "/asiba to <BlockID>: " + C.AQUA + "Create asiba to hit the bottom!");
+					return true;
+				}
+
+				sender.sendMessage(C.GOLD + "/civn: " + C.AQUA + "Show infomation!");
+				sender.sendMessage(C.GOLD + "/hub: " + C.AQUA + "Go to hub!");
+				sender.sendMessage(C.GOLD + "/asiba <BlockID> <height>: " + C.AQUA + "Create asiba!");
+				sender.sendMessage(C.GOLD + "/asiba to <BlockID>: " + C.AQUA + "Create asiba to hit the bottom!");
+				sender.sendMessage(C.GOLD + "/seppuku: " + C.AQUA + "Die...");
+				return true;
+			}
+
+			/*余計な引数がついているとき*/
+			sender.sendMessage(prefix + ErrorMessage.UP);
+			return false;
 		}
 
 		/*「/asiba」コマンド*/
@@ -307,7 +319,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		{
 			if (!(sender instanceof Player))
 			{
-				sender.sendMessage(prefix + FC);
+				sender.sendMessage(prefix + ErrorMessage.FC);
 				return false;
 			}
 
@@ -320,6 +332,12 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 				if (args[0].equalsIgnoreCase("to"))
 				{
+					if (args[1] == null)
+					{
+						sender.sendMessage(prefix + ErrorMessage.UP);
+						return false;
+					}
+
 					try
 					{
 						Integer.parseInt(args[1]);
@@ -336,9 +354,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 						/*取得に失敗したら終了*/
 						if (m == null)
 						{
-							sender.sendMessage(prefix + RED + args[1] + " doesn't exist!");
-							sender.sendMessage(GREEN + "     >>>Is it a Block?");
-							sender.sendMessage(GREEN + "     >>>Isn't it wrong Name?");
+							sender.sendMessage(prefix + C.RED + args[1] + C.GOLD + " doesn't exist!");
 							return false;
 						}
 
@@ -363,9 +379,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					/*取得に失敗したら終了*/
 					if (m == null)
 					{
-						sender.sendMessage(prefix + RED + args[1] + " doesn't exist!");
-						sender.sendMessage(GREEN + "     >>>Is it a Block?");
-						sender.sendMessage(GREEN + "     >>>Isn't it wrong ID?");
+						sender.sendMessage(prefix + C.RED + args[1] + C.GOLD + " doesn't exist!");
 						return false;
 					}
 
@@ -399,9 +413,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					/*取得に失敗したらfalseを返す*/
 					if (m == null)
 					{
-						sender.sendMessage(prefix + RED + args[0] + " doesn't exist!");
-						sender.sendMessage(GREEN + "     >>>Is it a Block?");
-						sender.sendMessage(GREEN + "     >>>Isn't it wrong Name?");
+						sender.sendMessage(prefix + C.RED + args[0] + C.GOLD + " doesn't exist!");
 						return false;
 					}
 
@@ -417,7 +429,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 						/*数値ではなかったとき*/
 						catch (NumberFormatException er)
 						{
-							sender.sendMessage(prefix + RED + "Invaild parameters!");
+							sender.sendMessage(prefix + C.RED + "Invaild parameters!");
 							return false;
 						}
 
@@ -452,9 +464,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				/*マテリアルの取得に失敗したとき*/
 				if (m == null)
 				{
-					sender.sendMessage(prefix + RED + "ItemID [" + AQUA + block + RED + "]" + " doesn't exist!");
-					sender.sendMessage(GREEN + "     >>>Is it a Block?");
-					sender.sendMessage(GREEN + "     >>>Isn't it wrong ID?");
+					sender.sendMessage(prefix + C.AQUA + "ItemID [" + C.RED + block + C.AQUA + "]" + C.GOLD + " doesn't exist!");
 					return false;
 				}
 
@@ -470,7 +480,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					/*数値ではなかったとき終了*/
 					catch (NumberFormatException e)
 					{
-						sender.sendMessage(prefix + RED + "Invaild parameters!");
+						sender.sendMessage(prefix + C.RED + "Invaild parameters!");
 						return false;
 					}
 
@@ -495,64 +505,20 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				return true;
 			}
 
-			/*余計な引数がついているとき*/
-			sender.sendMessage(prefix + UP);
+			sender.sendMessage(prefix + ErrorMessage.UP);
 			return false;
 
-		}
-
-		/*「/civn」コマンド*/
-		else if (cmd.getName().equalsIgnoreCase("civn"))
-		{
-			if (args.length == 0)
-			{
-				sender.sendMessage(prefix);
-				sender.sendMessage(GOLD + "Author: " + D_RED + "CIVN");
-				sender.sendMessage(GOLD + "Version: " + D_BLUE + "1.0");
-				return true;
-			}
-
-			else if (args[0].equalsIgnoreCase("help") | args[0].equalsIgnoreCase("?"))
-			{
-				Player p = (Player) sender;
-
-				if (p.isOp())
-				{
-					sender.sendMessage(prefix);
-					sender.sendMessage(GOLD + "/civn: " + AQUA + "Show infomation!");
-					sender.sendMessage(GOLD + "/hub: " + AQUA + "Go to hub!");
-					sender.sendMessage(GOLD + "/sethub: " + AQUA + "Set hub at your location!");
-					sender.sendMessage(GOLD + "/sethub <World> <X> <Y> <Z> or");
-					sender.sendMessage(GOLD + "/sethub <World> <X> <Y> <Z> <YAW> <PITCH>: " + AQUA + "Set hub at that location!");
-					sender.sendMessage(GOLD + "/hubl: " + AQUA + "Show now hub location!");
-					sender.sendMessage(GOLD + "/seppuku: " + AQUA + "Die...");
-					sender.sendMessage(GOLD + "/asiba <BlockID> <height>: " + AQUA + "Create asiba!");
-					sender.sendMessage(GOLD + "/asiba to <BlockID>: " + AQUA + "Create asiba to hit the bottom!");
-					return true;
-				}
-
-				sender.sendMessage(GOLD + "/civn: " + AQUA + "Show infomation!");
-				sender.sendMessage(GOLD + "/hub: " + AQUA + "Go to hub!");
-				sender.sendMessage(GOLD + "/asiba <BlockID> <height>: " + AQUA + "Create asiba!");
-				sender.sendMessage(GOLD + "/asiba to <BlockID>: " + AQUA + "Create asiba to hit the bottom!");
-				sender.sendMessage(GOLD + "/seppuku: " + AQUA + "Die...");
-				return true;
-			}
-
-			/*余計な引数がついているとき*/
-			sender.sendMessage(prefix + UP);
-			return false;
 		}
 
 		return false;
 
-}
+	}
 
 	/*プレイヤーが死んだときのイベント*/
 	@EventHandler
 	public void onPlayerDeath (PlayerDeathEvent event)
 	{
-		if (!(this.getConfig().getString("Event.PlayerDeath").equalsIgnoreCase("true")))
+		if (!(this.getConfig().getString("EventReport.PlayerDeath").equalsIgnoreCase("true")))
 		{
 			return;
 		}
@@ -565,20 +531,18 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		/*殺した人がいない場合*/
 		if (k == null)
 		{
-			event.setDeathMessage(prefix + D_GREEN + name + GOLD + " died!");
+			event.setDeathMessage(prefix + C.D_GREEN + name + C.GOLD + " died!");
 			return;
 		}
 
-		event.setDeathMessage(prefix + D_GREEN + name + GOLD + " was killed by " + RED + k.getName());
-		return;
-
+		event.setDeathMessage(prefix + C.D_GREEN + name + C.GOLD + " was killed by " + C.RED + k.getName());
 	}
 
 	/*プレイヤーのレベルが変化したときのイベント*/
 	@EventHandler
 	public void onLevelUp (PlayerLevelChangeEvent event)
 	{
-		if (!(this.getConfig().getString("Event.ChangeLevel").equalsIgnoreCase("true")))
+		if (!(this.getConfig().getString("EventReport.ChangeLevel").equalsIgnoreCase("true")))
 		{
 			return;
 		}
@@ -591,24 +555,21 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		/*レベルが上がった時の処理*/
 		if (newl > oldl)
 		{
-			Bukkit.broadcastMessage(prefix + D_GREEN + pn + GOLD + " leveled up " + RED + "Lv." + oldl + GOLD + " to " + RED + "Lv." + newl + GOLD + "!");
+			Bukkit.broadcastMessage(prefix + C.D_GREEN + pn + C.GOLD + " leveled up " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
 		}
 
 		/*レベルが下がった時の処理*/
 		else if (newl < oldl)
 		{
-			Bukkit.broadcastMessage(prefix + D_GREEN + pn + GOLD + " leveled down " + RED + "Lv." + oldl + GOLD + " to " + RED + "Lv." + newl + GOLD + "!");
+			Bukkit.broadcastMessage(prefix + C.D_GREEN + pn + C.GOLD + " leveled down " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
 		}
-
-		return;
-
 	}
 
 	/*プレイヤーの経験値が変化した時のイベント*/
 	@EventHandler
 	public void onExpUp (PlayerExpChangeEvent event)
 	{
-		if (!(this.getConfig().getString("Event.ChangeEXP").equalsIgnoreCase("true")))
+		if (!(this.getConfig().getString("EventReport.ChangeEXP").equalsIgnoreCase("true")))
 		{
 			return;
 		}
@@ -617,8 +578,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		String pn = p.getName();
 		int exp = event.getAmount();
 
-		Bukkit.broadcastMessage(prefix + D_GREEN + pn + GOLD + " got " + RED + exp + GOLD + " EXP!");
-		return;
+		Bukkit.broadcastMessage(prefix + C.D_GREEN + pn + C.GOLD + " got " + C.RED + exp + C.GOLD + " EXP!");
 
 	}
 
@@ -626,7 +586,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 	@EventHandler
 	public void onHealth (PlayerBedLeaveEvent event)
 	{
-		if (!(this.getConfig().getString("Event.BedHeal").equalsIgnoreCase("true")))
+		if (!(this.getConfig().getString("BedHeal").equalsIgnoreCase("true")))
 		{
 			return;
 		}
@@ -636,37 +596,73 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		p.setHealth(20);
 		p.setFoodLevel(20);
 
-		Bukkit.broadcastMessage(prefix + D_GREEN + p.getName() + GOLD + " has completely recovered!");
-		return;
+		Bukkit.broadcastMessage(prefix + C.D_GREEN + p.getName() + C.GOLD + " has completely recovered!");
 	}
 
 	/*プレイヤーがゲームに参加した時のイベント*/
 	@EventHandler
 	public void onJoin (PlayerJoinEvent event)
 	{
-		if (!(this.getConfig().getString("Event.JoinMsg").equalsIgnoreCase("true")))
+		if (!(this.getConfig().getString("EventReport.JoinMsg").equalsIgnoreCase("true")))
 		{
 			return;
 		}
 
 		Player p = event.getPlayer();
 
-		event.setJoinMessage(prefix + D_GREEN + p.getName() + GOLD + " has joined.");
-		return;
+		event.setJoinMessage(prefix + C.D_GREEN + p.getName() + C.GOLD + " has joined.");
+
+		for (Player players: Bukkit.getServer().getOnlinePlayers())
+		{
+			if (players.isOp())
+			{
+				players.sendMessage(prefix + C.GOLD + "This server's IP Address is " + C.GREEN + Bukkit.getServer().getIp());
+				players.sendMessage(prefix + C.RED + p.getName() + C.GOLD + "'s IP Address is " + C.GREEN + p.getAddress());
+			}
+		}
 	}
 
 	/*プレイヤーがゲームを離脱した時のイベント*/
 	@EventHandler
 	public void onLeave (PlayerQuitEvent event)
 	{
-		if (!(this.getConfig().getString("Event.LeaveMsg").equalsIgnoreCase("true")))
+		if (!(this.getConfig().getString("EventReport.LeaveMsg").equalsIgnoreCase("true")))
 		{
 			return;
 		}
 
 		Player p = event.getPlayer();
 
-		event.setQuitMessage(prefix + D_GREEN + p.getName() + GOLD + " has left.");
-		return;
+		event.setQuitMessage(prefix + C.D_GREEN + p.getName() + C.GOLD + " has left.");
+	}
+
+	@EventHandler
+	public void Attack (EntityDamageByEntityEvent e)
+	{
+		if (!(e.getDamager() instanceof Player))
+		{
+			return;
+		}
+
+		Player damager = (Player) e.getDamager();
+		Entity damagee = e.getEntity();
+
+		damager.sendMessage(prefix + C.RED + "You Attacked!");
+
+		if (damager.getInventory().getItemInHand().getType() == Material.STICK)
+		{
+			e.setDamage(0);
+
+			String name = damager.getInventory().getItemInHand().getItemMeta().getDisplayName();
+
+			damagee.setCustomName(name);
+
+			if (name == null)
+			{
+				damager.sendMessage(prefix + C.RED + "You reset his name!");
+			}
+
+			damager.sendMessage(prefix + C.RED + "You changed his name! => " + name);
+		}
 	}
 }

@@ -8,10 +8,11 @@ hub:
   yaw:
   pitch:
 
-Event:
-  BedHeal: true
+EventReport:
   JoinMsg: true
   LeaveMsg: true
   ChangeEXP: true
   ChangeLevel: true
   PlayerDeath: true
+
+BedHeal: true
