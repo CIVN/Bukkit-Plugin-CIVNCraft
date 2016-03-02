@@ -1,0 +1,10 @@
+
+・スコアボード
+- ip
+- name
+- online players
+- world
+- gamemode
+・トゥイッター機能（認証とかは後）
+・pexからprefix取得→カラーコード変換
+・コマンドエクスキューター
