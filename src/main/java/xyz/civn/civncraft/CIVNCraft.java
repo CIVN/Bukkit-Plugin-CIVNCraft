@@ -1,5 +1,9 @@
 package xyz.civn.civncraft;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -12,273 +16,219 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerBedLeaveEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import ru.tehkode.permissions.PermissionUser;
+import ru.tehkode.permissions.bukkit.PermissionsEx;
+
+import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.maxmind.geoip2.model.CountryResponse;
+
 public class CIVNCraft extends JavaPlugin implements Listener
 {
-	static String prefix = C.GRAY + "[" + C.B + C.BLUE + C.B + "CIVNCraft" + C.R + C.GRAY + "] ";
+	public static String prefix = Prefix.prefix;
+	public static String[] contents = {"world", "location", "level", "address", "gamemode", "health"};
+	public FileConfiguration cf = this.getConfig();
 
 	@Override
 	public void onEnable()
 	{
-		this.saveDefaultConfig();
+		getLogger().info("Enable CIVNCraft! => Ver: " + this.getDescription().getVersion());
 		getServer().getPluginManager().registerEvents(this, this);
+		this.reloadConfig();
 	}
 
-	@SuppressWarnings({ "unused", "deprecation" })
+	@Override
+	public void onDisable()
+	{
+		getLogger().info("Disable CIVNCraft!");
+		this.saveConfig();
+	}
+
+	public void onReload()
+	{
+		getLogger().info(C.RED + "Reloading!");
+		this.saveConfig();
+		this.reloadConfig();
+	}
+
+	@SuppressWarnings({ "deprecation" })
 	@Override
 	public boolean onCommand (CommandSender sender, Command cmd, String commandLabel, String[] args)
 	{
-		FileConfiguration cf = this.getConfig();
-
 		if (cmd.getName().equalsIgnoreCase("hub"))
 		{
 			if (!(sender instanceof Player))
 			{
-				sender.sendMessage(prefix + ErrorMessage.FC);
+				SendErrorMessage.SenderIsNotPlayer(sender);
 				return false;
 			}
 
-			if (args.length == 0)
+			Player p = (Player) sender;
+			String hubW =  cf.getString("hub.world");
+			double hubX =  cf.getDouble("hub.x");
+			double hubY =  cf.getDouble("hub.y");
+			double hubZ =  cf.getDouble("hub.z");
+			float hubYAW = (float) cf.getDouble("hub.yaw");
+			float hubPITCH = (float) cf.getDouble("hub.pitch");
+
+			if (hubW == null)
 			{
-				String hubW =  cf.getString("hub.world");
-				double hubX =  cf.getDouble("hub.x");
-				double hubY =  cf.getDouble("hub.y");
-				double hubZ =  cf.getDouble("hub.z");
-				float hubYAW = (float) cf.getDouble("hub.yaw");
-				float hubPITCH = (float) cf.getDouble("hub.pitch");
-
-				Player p = (Player) sender;
-
-				/*ハブが設定されていない（ワールドがnull）だったとき*/
-				if (hubW == null)
-				{
-					sender.sendMessage(prefix + C.RED + "Hub wasn't set!");
-					sender.sendMessage(prefix + C.RED + "Please set hub!");
-					return false;
-				}
-
-				/*configから取得した座標をロケーションにし、そこにプレイヤーをテレポート*/
-				Location HUB = new Location (Bukkit.getWorld (hubW), hubX, hubY, hubZ, hubYAW, hubPITCH);
-				p.teleport(HUB);
-				return true;
+				SendErrorMessage.HubWasNotSet(sender);
+				return false;
 			}
 
-
-			sender.sendMessage(prefix + ErrorMessage.UP);
-			return false;
-
+			p.teleport(new Location (Bukkit.getServer().getWorld (hubW), hubX, hubY, hubZ, hubYAW, hubPITCH));
+			return true;
 		}
 
 		else if (cmd.getName().equalsIgnoreCase("sethub"))
 		{
 			if (!(sender instanceof Player))
 			{
-				sender.sendMessage(prefix + ErrorMessage.FC);
+				SendErrorMessage.SenderIsNotPlayer(sender);
 				return false;
 			}
 
+			Player p = (Player) sender;
+
 			if (args.length == 0)
 			{
-				/*プレイヤーの座標を取得*/
-				Player p = (Player) sender;
-
-				double rX = p.getLocation().getX();
-				double rY = p.getLocation().getY();
-				double rZ = p.getLocation().getZ();
-				double rYAW = p.getLocation().getYaw();
-				double rPITCH = p.getLocation().getPitch();
-
-				/*取得した座標をコンフィグファイルに保存*/
 				cf.set("hub.world", p.getWorld().getName());
-				cf.set("hub.x", rX);
-				cf.set("hub.y", rY);
-				cf.set("hub.z", rZ);
-				cf.set("hub.yaw", rYAW);
-				cf.set("hub.pitch", rPITCH);
-
-				/*コンフィグファイルを保存、リロード*/
+				cf.set("hub.x", p.getLocation().getX());
+				cf.set("hub.y", p.getLocation().getY());
+				cf.set("hub.z", p.getLocation().getZ());
+				cf.set("hub.yaw", p.getLocation().getYaw());
+				cf.set("hub.pitch", p.getLocation().getPitch());
 				this.saveConfig();
 				this.reloadConfig();
 
-				/*報告*/
-				Bukkit.getServer().broadcastMessage(prefix + C.AQUA + "Hub location has changed by " + C.RED + sender.getName() + C.AQUA + "!");
-				Bukkit.getServer().broadcastMessage(prefix + C.GREEN + "/hubloc " + C.AQUA + ">>> You can see now hub location!");
+				SendReportMessage.HubWasChanged(sender);
 				return true;
 			}
 
 			else if (args.length == 4)
 			{
-				World w = Bukkit.getWorld(args[0]);
+				World w = Bukkit.getServer().getWorld(args[0]);
 
 				if (w != null)
 				{
-					/*入力した座標をコンフィグファイルに保存*/
 					cf.set("hub.world", args[0]);
 
 					try
 					{
-						Double rX = Double.parseDouble (args[1]);
-						Double rY = Double.parseDouble (args[2]);
-						Double rZ = Double.parseDouble (args[3]);
+						for (int i = 1; i <= 3; i++)
+						{
+							Double.parseDouble (args[i]);
+						}
 					}
 
-					catch (NumberFormatException e)
+					catch (Exception e)
 					{
-						sender.sendMessage(prefix + C.RED + "Please enter the coordinates!");
+						SendErrorMessage.Failed(sender);
 						return false;
 					}
 
-					Double rX = Double.parseDouble (args[1]);
-					Double rY = Double.parseDouble (args[2]);
-					Double rZ = Double.parseDouble (args[3]);
-
-					/*取得した座標をコンフィグファイルに保存*/
-					cf.set("hub.x", rX);
-					cf.set("hub.y", rY);
-					cf.set("hub.z", rZ);
+					cf.set("hub.x", Double.parseDouble (args[1]));
+					cf.set("hub.y", Double.parseDouble (args[2]));
+					cf.set("hub.z", Double.parseDouble (args[3]));
 					cf.set("hub.yaw", 0);
 					cf.set("hub.pitch", 0);
 					this.saveConfig();
 					this.reloadConfig();
 
-					/*報告*/
-					Bukkit.getServer().broadcastMessage(prefix + C.AQUA + "Hub location has changed by " + C.RED + sender.getName() + C.AQUA + "!");
-					Bukkit.getServer().broadcastMessage(prefix + C.GREEN + "/hubloc " + C.AQUA + ">>> You can see now hub location!");
+					SendReportMessage.HubWasChanged(sender);
 					return true;
 				}
 
-				/*入力したワールドが存在しないとき*/
 				Bukkit.getServer().broadcastMessage(prefix + C.GOLD + args[0] + " doesn't exist!");
 				return false;
 			}
 
 			else if (args.length == 6)
 			{
-				World w = Bukkit.getWorld (args[0]);
+				World w = Bukkit.getServer().getWorld(args[0]);
 
 				if (w != null)
 				{
-					/*入力した座標をコンフィグファイルに保存*/
 					cf.set("hub.world", args[0]);
 
 					try
 					{
-						Double rX = Double.parseDouble (args[1]);
-						Double rY = Double.parseDouble (args[2]);
-						Double rZ = Double.parseDouble (args[3]);
-						Double rYaw = Double.parseDouble (args[4]);
-						Double rPicth = Double.parseDouble (args[5]);
+						for (int i = 1; i <= 5; i++)
+						{
+							Double.parseDouble (args[i]);
+						}
 					}
 
-					catch (NumberFormatException e)
+					catch (Exception e)
 					{
-						sender.sendMessage(prefix + C.RED + "Please enter the coordinates!");
+						SendErrorMessage.Failed(sender);
 						return false;
 					}
 
-					Double rX = Double.parseDouble (args[1]);
-					Double rY = Double.parseDouble (args[2]);
-					Double rZ = Double.parseDouble (args[3]);
-					Double rYaw = Double.parseDouble (args[4]);
-					Double rPitch = Double.parseDouble (args[5]);
-
-					cf.set("hub.x", rX);
-					cf.set("hub.y", rY);
-					cf.set("hub.z", rZ);
-					cf.set("hub.yaw", rYaw);
-					cf.set("hub.pitch", rPitch);
+					cf.set("hub.x", Double.parseDouble (args[1]));
+					cf.set("hub.y", Double.parseDouble (args[2]));
+					cf.set("hub.z", Double.parseDouble (args[3]));
+					cf.set("hub.yaw", Double.parseDouble (args[4]));
+					cf.set("hub.pitch", Double.parseDouble (args[5]));
 					this.saveConfig();
 					this.reloadConfig();
 
-					/*報告*/
-					Bukkit.getServer().broadcastMessage(prefix + C.AQUA + "Hub location has changed by " + C.RED + sender.getName() + C.AQUA + "!");
-					Bukkit.getServer().broadcastMessage(prefix + C.GREEN + "/hubloc " + C.AQUA + ">>> You can see now hub location!");
+					SendReportMessage.HubWasChanged(sender);
 					return true;
 				}
 
-				/*入力したワールドが存在しないとき*/
-				Bukkit.getServer().broadcastMessage(prefix + C.GOLD + args[0] + " doesn't exist!");
+				SendErrorMessage.DoesNotExist(sender, args);
 				return false;
 			}
 
-			sender.sendMessage(prefix);
-			sender.sendMessage(C.GOLD + "Example: " + C.AQUA + "/sethub <WorldName> <X> <Y> <Z> or");
-			sender.sendMessage(         C.AQUA + "/sethub <WorldName> <X> <Y> <Z> <Yaw> <Pitch>");
 			return false;
-
 		}
 
-		/*「/hubloc」コマンド*/
 		else if (cmd.getName().equalsIgnoreCase("hubloc"))
 		{
 			if (args.length == 0)
 			{
-				/*コンフィグファイルからハブのx~pitch座標を取得*/
-				String W = cf.getString("hub.world");
-				double X = cf.getDouble("hub.x");
-				double Y = cf.getDouble("hub.y");
-				double Z = cf.getDouble("hub.z");
-				float YAW = (float) cf.getDouble("hub.yaw");
-				float PITCH = (float) cf.getDouble("hub.pitch");
-
-				/*報告*/
-				sender.sendMessage(prefix);
-				sender.sendMessage(C.GREEN + "World: " + C.AQUA + W);
-				sender.sendMessage(C.GOLD + "X: " + C.AQUA + X);
-				sender.sendMessage(C.GOLD + "Y: " + C.AQUA + Y);
-				sender.sendMessage(C.GOLD + "Z: " + C.AQUA + Z);
-				sender.sendMessage(C.GOLD + "Yaw: " + C.AQUA + YAW);
-				sender.sendMessage(C.GOLD + "Pitch: " + C.AQUA + PITCH);
+				SendReportMessage.ShowHubLocation(sender, cf);
 				return true;
 			}
 
-			/*余計な引数がついているとき*/
-			sender.sendMessage(prefix + ErrorMessage.UP);
+			SendErrorMessage.ExtraArguments(sender);
 			return false;
-
 		}
 
-		/*「/seppuku」コマンド*/
 		else if (cmd.getName().equalsIgnoreCase("seppuku"))
 		{
 			if (!(sender instanceof Player))
 			{
-				/*コマンドの実行元がプレイヤーではないとき*/
-				sender.sendMessage(prefix + ErrorMessage.FC);
+				SendErrorMessage.SenderIsNotPlayer(sender);
 				return false;
 			}
 
 			if (args.length == 0)
 			{
-				/*プレイヤーを取得*/
 				Player p = (Player) sender;
 
-				/*取得したプレイヤーのヘルスを0にする（殺す）*/
 				p.setHealth(0);
 				return true;
 			}
 
-			/*余計な引数がついているとき*/
-			sender.sendMessage(prefix + ErrorMessage.UP);
+			SendErrorMessage.ExtraArguments(sender);
 			return false;
-
 		}
 
-		/*「/civn」コマンド*/
 		else if (cmd.getName().equalsIgnoreCase("civn"))
 		{
 			if (args.length == 0)
 			{
-				sender.sendMessage(prefix);
-				sender.sendMessage(C.GOLD + "Author: " + C.D_RED + "CIVN");
-				sender.sendMessage(C.GOLD + "Version: " + C.D_BLUE + "1.0");
+				SendReportMessage.ShowInfomation(sender, this);
 				return true;
 			}
 
@@ -288,45 +238,28 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 				if (p.isOp())
 				{
-					sender.sendMessage(prefix);
-					sender.sendMessage(C.GOLD + "/civn: " + C.AQUA + "Show infomation!");
-					sender.sendMessage(C.GOLD + "/hub: " + C.AQUA + "Go to hub!");
-					sender.sendMessage(C.GOLD + "/sethub: " + C.AQUA + "Set hub at your location!");
-					sender.sendMessage(C.GOLD + "/sethub <World> <X> <Y> <Z> or");
-					sender.sendMessage(C.GOLD + "/sethub <World> <X> <Y> <Z> <YAW> <PITCH>: " + C.AQUA + "Set hub at that location!");
-					sender.sendMessage(C.GOLD + "/hubl: " + C.AQUA + "Show now hub location!");
-					sender.sendMessage(C.GOLD + "/seppuku: " + C.AQUA + "Die...");
-					sender.sendMessage(C.GOLD + "/asiba <BlockID> <height>: " + C.AQUA + "Create asiba!");
-					sender.sendMessage(C.GOLD + "/asiba to <BlockID>: " + C.AQUA + "Create asiba to hit the bottom!");
+					SendHelpMessage.ShowOpHelp(sender);
 					return true;
 				}
 
-				sender.sendMessage(C.GOLD + "/civn: " + C.AQUA + "Show infomation!");
-				sender.sendMessage(C.GOLD + "/hub: " + C.AQUA + "Go to hub!");
-				sender.sendMessage(C.GOLD + "/asiba <BlockID> <height>: " + C.AQUA + "Create asiba!");
-				sender.sendMessage(C.GOLD + "/asiba to <BlockID>: " + C.AQUA + "Create asiba to hit the bottom!");
-				sender.sendMessage(C.GOLD + "/seppuku: " + C.AQUA + "Die...");
+				SendHelpMessage.ShowHelp(sender);
 				return true;
 			}
 
-			/*余計な引数がついているとき*/
-			sender.sendMessage(prefix + ErrorMessage.UP);
+			SendErrorMessage.ExtraArguments(sender);
 			return false;
 		}
 
-		/*「/asiba」コマンド*/
 		else if (cmd.getName().equalsIgnoreCase("asiba"))
 		{
 			if (!(sender instanceof Player))
 			{
-				sender.sendMessage(prefix + ErrorMessage.FC);
+				SendErrorMessage.SenderIsNotPlayer(sender);
 				return false;
 			}
 
-			/*コマンドのパラメータが1か2だったとき*/
 			if (args.length == 1 | args.length == 2)
 			{
-				/*プレイヤーとプレイヤーの位置を取得*/
 				Player p = (Player) sender;
 				Location l = p.getLocation();
 
@@ -334,7 +267,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				{
 					if (args[1] == null)
 					{
-						sender.sendMessage(prefix + ErrorMessage.UP);
+						SendErrorMessage.ExtraArguments(sender);
 						return false;
 					}
 
@@ -343,15 +276,11 @@ public class CIVNCraft extends JavaPlugin implements Listener
 						Integer.parseInt(args[1]);
 					}
 
-					/*数値ではなかったとき*/
-					catch (NumberFormatException e)
+					catch (Exception e)
 					{
 						String block = args[1].toUpperCase();
-
-						/*args[1]からマテリアルを取得*/
 						Material m = Material.getMaterial(block);
 
-						/*取得に失敗したら終了*/
 						if (m == null)
 						{
 							sender.sendMessage(prefix + C.RED + args[1] + C.GOLD + " doesn't exist!");
@@ -373,10 +302,8 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 					Integer b = new Integer (args[1]);
 					int block = (int) b;
-
 					Material m = Material.getMaterial(block);
 
-					/*取得に失敗したら終了*/
 					if (m == null)
 					{
 						sender.sendMessage(prefix + C.RED + args[1] + C.GOLD + " doesn't exist!");
@@ -396,99 +323,78 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					}
 				}
 
-				/*args[0]が数値かチェック*/
 				try
 				{
 					Integer.parseInt(args[0]);
 				}
 
-				/*数値ではなかったときStringとして進行する*/
-				catch (NumberFormatException e)
+				catch (Exception e)
 				{
 					String block = args[0].toUpperCase();
-
-					/*args[0]からマテリアルを取得*/
 					Material m = Material.getMaterial(block);
 
-					/*取得に失敗したらfalseを返す*/
 					if (m == null)
 					{
 						sender.sendMessage(prefix + C.RED + args[0] + C.GOLD + " doesn't exist!");
 						return false;
 					}
 
-					/*コマンドパラメータが2のとき*/
 					if (args.length == 2)
 					{
-						/*args[1]が数値かチェック*/
 						try
 						{
 							Integer.parseInt(args[1]);
 						}
 
-						/*数値ではなかったとき*/
-						catch (NumberFormatException er)
+						catch (Exception er)
 						{
-							sender.sendMessage(prefix + C.RED + "Invaild parameters!");
+							SendErrorMessage.Failed(sender);
 							return false;
 						}
 
-						/*args[1]をint型に変換*/
 						Integer am = new Integer (args[1]);
 						int amount = (int) am;
 
-						/*ブロックをamount(args[1])の高さでセットする*/
 						for (int i = 1; i <= amount; i++)
 						{
 							l.setY(l.getY() - 1);
 							l.getBlock().setType(m);
 						}
 
-						return true;
-
+						return false;
 					}
 
-					/*ブロックをプレイヤーのY座標 - 1の位置にセットする*/
 					l.setY(l.getY() - 1);
 					l.getBlock().setType(m);
 					return true;
-
 				}
 
-				/*args[0]をint型に変換*/
 				Integer b = new Integer (args[0]);
 				int block = (int) b;
-
 				Material m = Material.getMaterial(block);
 
-				/*マテリアルの取得に失敗したとき*/
 				if (m == null)
 				{
 					sender.sendMessage(prefix + C.AQUA + "ItemID [" + C.RED + block + C.AQUA + "]" + C.GOLD + " doesn't exist!");
 					return false;
 				}
 
-				/*コマンドパラメータが2のとき*/
 				if (args.length == 2)
 				{
-					/*args[1]が数値かチェック*/
 					try
 					{
 						Integer.parseInt(args[1]);
 					}
 
-					/*数値ではなかったとき終了*/
-					catch (NumberFormatException e)
+					catch (Exception e)
 					{
-						sender.sendMessage(prefix + C.RED + "Invaild parameters!");
+						SendErrorMessage.Failed(sender);
 						return false;
 					}
 
-					/*args[1]をint型に変換*/
 					Integer am = new Integer (args[1]);
 					int amount = (int) am;
 
-					/*ブロックをamount(args[1])の高さでセットする*/
 					for (int i = 1; i <= amount; i++)
 					{
 						l.setY(l.getY() - 1);
@@ -496,148 +402,341 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					}
 
 					return false;
-
 				}
 
-				/*ブロックをプレイヤーのY座標 - 1の位置にセットする*/
 				l.setY(l.getY() - 1);
 				l.getBlock().setType(m);
 				return true;
 			}
 
-			sender.sendMessage(prefix + ErrorMessage.UP);
+			SendErrorMessage.ExtraArguments(sender);
 			return false;
-
 		}
+
+		if (cmd.getName().equalsIgnoreCase("pdata"))
+		{
+			if (args.length == 0)
+			{
+				sender.sendMessage(prefix + C.GOLD + "/pdata command was made by " + C.RED + "" + C.B + "CIVN");
+				return true;
+			}
+
+			else if (args[0].equalsIgnoreCase("?") || args[0].equalsIgnoreCase("help"))
+			{
+				SendHelpMessage.ShowPdataHelp(sender);
+
+				for (String c : contents)
+				{
+					sender.sendMessage(C.BLUE + "- " + C.AQUA + c);
+				}
+
+				return true;
+			}
+
+			if (!(sender instanceof Player))
+			{
+				SendErrorMessage.SenderIsNotPlayer(sender);
+				return false;
+			}
+
+			Player player = Bukkit.getServer().getPlayer(args[1]);
+
+			//プレイヤー取得失敗
+			if (player == null)
+			{
+				SendErrorMessage.PlayerIsNotIn(sender, args);
+				return false;
+			}
+
+			if (args[0].equalsIgnoreCase("world"))
+			{
+				String world = player.getWorld().getName();
+
+				sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + " is in " + C.D_GREEN + world + C.BLUE + "!");
+				return true;
+			}
+
+			else if (args[0].equalsIgnoreCase("health"))
+			{
+				double health = player.getHealth();
+
+				sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + "'s health is " + C.D_GREEN + health + C.BLUE + "!");
+				return true;
+
+			}
+
+			else if (args[0].equalsIgnoreCase("location"))
+			{
+				Location location = player.getLocation();
+				double[] l = {location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()};
+
+				SendReportMessage.ShowPlayerLocation(sender, player, l, GetPlayerPrefix(player));
+				return true;
+			}
+
+			else if (args[0].equalsIgnoreCase("level"))
+			{
+				int level = player.getLevel();
+
+				sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + "'s level is " + C.D_GREEN + level + C.BLUE + "!");
+				return true;
+			}
+
+			else if (args[0].equalsIgnoreCase("address") || args[0].equalsIgnoreCase("ip"))
+			{
+				String address = player.getAddress().getAddress().toString().replace("/", "");
+
+				sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + "'s address is " + C.D_GREEN + address + C.BLUE + "!");
+				return true;
+			}
+
+			else if (args[0].equalsIgnoreCase("gamemode"))
+			{
+				String gamemode = player.getGameMode().name();
+
+				sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + "'s gamemode is " + C.D_GREEN + gamemode + C.BLUE + "!");
+				return true;
+			}
+
+			SendErrorMessage.DoesNotExistInContents(sender, args);
+			return false;
+		}
+
+		else if (cmd.getName().equalsIgnoreCase("ops"))
+		{
+			sender.sendMessage(prefix + C.BLUE + "Online Operators!");
+
+			int i = 1;
+
+			for (Player p : Bukkit.getServer().getOnlinePlayers())
+			{
+				if (p.isOp())
+				{
+					sender.sendMessage(C.D_GREEN + "" + i + ": " + GetPlayerPrefix(p) + p.getName());
+					i++;
+				}
+			}
+
+			return true;
+		}
+
+		else if (cmd.getName().equalsIgnoreCase("rename"))
+		{
+			if (args.length == 1)
+			{
+				Player player = (Player) sender;
+
+				if (player == null)
+				{
+					sender.sendMessage(prefix + C.BLUE + args[1] + C.RED + " isn't in this server!");
+					return false;
+				}
+
+				try
+				{
+					player.getInventory().getItemInMainHand().getItemMeta().setDisplayName(args[0]);
+				}
+
+				catch (Exception e)
+				{
+					SendErrorMessage.Failed(sender);
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+
+		else if (cmd.getName().equalsIgnoreCase("getlocation"))
+		{
+			if (args.length == 1)
+			{
+				Player player = Bukkit.getServer().getPlayer(args[0]);
+
+				if (player == null)
+				{
+					sender.sendMessage(prefix + C.BLUE + args[1] + C.RED + " isn't in this server!");
+					return false;
+				}
+
+				InetAddress address = player.getAddress().getAddress();
+				String country;
+
+				try
+				{
+					country = GetLocation(address, sender);
+				}
+
+				catch (Exception e)
+				{
+					SendErrorMessage.Failed(sender);
+					return false;
+				}
+
+				if (country == null)
+				{
+					SendErrorMessage.Failed(sender);
+					return false;
+				}
+
+				sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.D_GREEN + " is in " + C.BLUE + country);
+				return true;
+			}
+		}
+
 
 		return false;
-
 	}
 
-	/*プレイヤーが死んだときのイベント*/
-	@EventHandler
-	public void onPlayerDeath (PlayerDeathEvent event)
+	public String GetLocation(InetAddress address, CommandSender sender) throws IOException, GeoIp2Exception
 	{
-		if (!(this.getConfig().getString("EventReport.PlayerDeath").equalsIgnoreCase("true")))
+		InputStream in;
+		DatabaseReader countryDB;
+		CountryResponse res;
+
+		//GetDataBase
+		try
 		{
-			return;
+			in = this.getResource("GeoLite2-County.mmdb");
 		}
 
-		String name = event.getEntity().getName();
-
-		Player p = event.getEntity().getPlayer();
-		Player k = p.getKiller();
-
-		/*殺した人がいない場合*/
-		if (k == null)
+		catch (Exception e)
 		{
-			event.setDeathMessage(prefix + C.D_GREEN + name + C.GOLD + " died!");
-			return;
+			sender.sendMessage(prefix + C.RED + "Failed! => GetDataBase");
+			return null;
 		}
 
-		event.setDeathMessage(prefix + C.D_GREEN + name + C.GOLD + " was killed by " + C.RED + k.getName());
+		//ReadDataBase
+		try
+		{
+			countryDB = new DatabaseReader.Builder(in).build();
+		}
+
+		catch (Exception e)
+		{
+			sender.sendMessage(prefix + C.RED + "Failed! => ReadDataBase");
+			return null;
+		}
+
+		//GetCountry
+		try
+		{
+			res = countryDB.country(address);
+		}
+
+		catch (Exception e)
+		{
+			sender.sendMessage(prefix + C.RED + "Failed! => GetCountry");
+			return null;
+		}
+
+		return res.getCountry().getName();
 	}
 
-	/*プレイヤーのレベルが変化したときのイベント*/
-	@EventHandler
-	public void onLevelUp (PlayerLevelChangeEvent event)
+	public String GetPlayerPrefix(Player player)
 	{
-		if (!(this.getConfig().getString("EventReport.ChangeLevel").equalsIgnoreCase("true")))
-		{
-			return;
-		}
+		PermissionUser user = PermissionsEx.getUser(player);
+		String prefix = user.getPrefix();
+		prefix = prefix.replace("&0", (CharSequence) C.$0);
+		prefix = prefix.replace("&1", (CharSequence) C.$1);
+		prefix = prefix.replace("&2", (CharSequence) C.$2);
+		prefix = prefix.replace("&3", (CharSequence) C.$3);
+		prefix = prefix.replace("&4", (CharSequence) C.$4);
+		prefix = prefix.replace("&5", (CharSequence) C.$5);
+		prefix = prefix.replace("&6", (CharSequence) C.$6);
+		prefix = prefix.replace("&7", (CharSequence) C.$7);
+		prefix = prefix.replace("&8", (CharSequence) C.$8);
+		prefix = prefix.replace("&9", (CharSequence) C.$9);
+		prefix = prefix.replace("&a", (CharSequence) C.$a);
+		prefix = prefix.replace("&b", (CharSequence) C.$b);
+		prefix = prefix.replace("&c", (CharSequence) C.$c);
+		prefix = prefix.replace("&d", (CharSequence) C.$d);
+		prefix = prefix.replace("&e", (CharSequence) C.$e);
+		prefix = prefix.replace("&f", (CharSequence) C.$f);
+		prefix = prefix.replace("&k", (CharSequence) C.$k);
+		prefix = prefix.replace("&l", (CharSequence) C.$l);
+		prefix = prefix.replace("&m", (CharSequence) C.$m);
+		prefix = prefix.replace("&n", (CharSequence) C.$n);
+		prefix = prefix.replace("&o", (CharSequence) C.$o);
+		prefix = prefix.replace("&r", (CharSequence) C.$r);
+		return prefix;
+	}
 
-		Player p = event.getPlayer();
+	@EventHandler
+	public void onPlayerLevelChangeEvent (PlayerLevelChangeEvent e)
+	{
+		Player p = e.getPlayer();
 		String pn = p.getName();
-		int newl = event.getNewLevel();
-		int oldl = event.getOldLevel();
+		int newl = e.getNewLevel();
+		int oldl = e.getOldLevel();
 
-		/*レベルが上がった時の処理*/
 		if (newl > oldl)
 		{
-			Bukkit.broadcastMessage(prefix + C.D_GREEN + pn + C.GOLD + " leveled up " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
+			Bukkit.broadcastMessage(prefix + C.D_GREEN + "" + C.B + "[" + C.GREEN + "" + C.B + p.getWorld().getName() + C.D_GREEN + "" + C.B + "] " + GetPlayerPrefix(p) + pn + C.GOLD + " leveled up " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
 		}
 
-		/*レベルが下がった時の処理*/
 		else if (newl < oldl)
 		{
-			Bukkit.broadcastMessage(prefix + C.D_GREEN + pn + C.GOLD + " leveled down " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
+			Bukkit.broadcastMessage(prefix + C.D_GREEN + "" + C.B + "[" + C.GREEN + "" + C.B + p.getWorld().getName() + C.D_GREEN + "" + C.B + "] " + GetPlayerPrefix(p) + pn + C.GOLD + " leveled down " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
 		}
+
+		return;
 	}
 
-	/*プレイヤーの経験値が変化した時のイベント*/
 	@EventHandler
-	public void onExpUp (PlayerExpChangeEvent event)
+	public void onPlayerExpChangeEvent (PlayerExpChangeEvent e)
 	{
-		if (!(this.getConfig().getString("EventReport.ChangeEXP").equalsIgnoreCase("true")))
-		{
-			return;
-		}
-
-		Player p = event.getPlayer();
+		Player p = e.getPlayer();
 		String pn = p.getName();
-		int exp = event.getAmount();
+		int exp = e.getAmount();
 
-		Bukkit.broadcastMessage(prefix + C.D_GREEN + pn + C.GOLD + " got " + C.RED + exp + C.GOLD + " EXP!");
-
+		Bukkit.broadcastMessage(prefix + C.D_GREEN + "" + C.B + "[" + C.GREEN + "" + C.B + p.getWorld().getName() + C.D_GREEN + "" + C.B + "] " + GetPlayerPrefix(p) + pn + C.GOLD + " got " + C.RED + exp + C.GOLD + " EXP!");
+		return;
 	}
 
-	/*プレイヤーがベッドで寝たときのイベント*/
 	@EventHandler
-	public void onHealth (PlayerBedLeaveEvent event)
+	public void onPlayerJoinEvent (PlayerJoinEvent e)
 	{
-		if (!(this.getConfig().getString("BedHeal").equalsIgnoreCase("true")))
-		{
-			return;
-		}
+		Player player = e.getPlayer();
+		String world = player.getWorld().getName();
 
-		Player p = event.getPlayer();
-
-		p.setHealth(20);
-		p.setFoodLevel(20);
-
-		Bukkit.broadcastMessage(prefix + C.D_GREEN + p.getName() + C.GOLD + " has completely recovered!");
-	}
-
-	/*プレイヤーがゲームに参加した時のイベント*/
-	@EventHandler
-	public void onJoin (PlayerJoinEvent event)
-	{
-		if (!(this.getConfig().getString("EventReport.JoinMsg").equalsIgnoreCase("true")))
-		{
-			return;
-		}
-
-		Player p = event.getPlayer();
-
-		event.setJoinMessage(prefix + C.D_GREEN + p.getName() + C.GOLD + " has joined.");
+		e.setJoinMessage(prefix + C.D_GREEN + "" + C.B + "[" + C.GREEN + "" + C.B + world + C.D_GREEN + "" + C.B + "] " + GetPlayerPrefix(player) + player.getName() + C.GOLD + " has joined.");
 
 		for (Player players: Bukkit.getServer().getOnlinePlayers())
 		{
 			if (players.isOp())
 			{
-				players.sendMessage(prefix + C.GOLD + "This server's IP Address is " + C.GREEN + Bukkit.getServer().getIp());
-				players.sendMessage(prefix + C.RED + p.getName() + C.GOLD + "'s IP Address is " + C.GREEN + p.getAddress());
+				players.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + "'s IP Address is " + C.GREEN + player.getAddress().getAddress().toString().replace("/", ""));
 			}
 		}
+
+		return;
 	}
 
-	/*プレイヤーがゲームを離脱した時のイベント*/
 	@EventHandler
-	public void onLeave (PlayerQuitEvent event)
+	public void onPlayerQuitEvent (PlayerQuitEvent e)
 	{
-		if (!(this.getConfig().getString("EventReport.LeaveMsg").equalsIgnoreCase("true")))
-		{
-			return;
-		}
+		Player player = e.getPlayer();
 
-		Player p = event.getPlayer();
-
-		event.setQuitMessage(prefix + C.D_GREEN + p.getName() + C.GOLD + " has left.");
+		e.setQuitMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + " has left.");
+		return;
 	}
 
 	@EventHandler
-	public void Attack (EntityDamageByEntityEvent e)
+	public void onPlayerChangedWorldEvent (PlayerChangedWorldEvent e)
+	{
+		Player player = e.getPlayer();
+		String from = e.getFrom().getName();
+		String to = player.getWorld().getName();
+
+		Bukkit.getServer().broadcastMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + " has moved from " + C.GREEN + from + C.GOLD + " to " + C.GREEN + to);
+		return;
+	}
+
+	@SuppressWarnings("deprecation")
+	@EventHandler
+	public void onEntityDamageByEntityEvent (EntityDamageByEntityEvent e)
 	{
 		if (!(e.getDamager() instanceof Player))
 		{
@@ -646,8 +745,6 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 		Player damager = (Player) e.getDamager();
 		Entity damagee = e.getEntity();
-
-		damager.sendMessage(prefix + C.RED + "You Attacked!");
 
 		if (damager.getInventory().getItemInHand().getType() == Material.STICK)
 		{
@@ -660,9 +757,12 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			if (name == null)
 			{
 				damager.sendMessage(prefix + C.RED + "You reset his name!");
+				return;
 			}
 
 			damager.sendMessage(prefix + C.RED + "You changed his name! => " + name);
 		}
+
+		return;
 	}
 }

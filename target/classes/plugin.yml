@@ -1,46 +1,70 @@
 name: CIVNCraft
-description: You can do all!
+description: This plugin has all of around the world.
 author: CIVN
-website: http://civn.xyz/
+website: https://twitter.com/oktm_style/
 main: xyz.civn.civncraft.CIVNCraft
-version: 1.0
+version: 1.1
 commands:
    hub:
-      description: hub command.
+      description: Moving to hub command.
       aliases: [lobby, spawn]
       usage: /<command>
       permission: civncraft.hub
-      permission-message: You don't have permission <permission>!
+      permission-message: &cYou don't have permission <permission>!
    sethub:
-      description: sethub command.
+      description: Setting hub command.
       aliases: [setlobby, lobbyset, hubset]
       usage: /<command> {<X> <Y> <Z> <Yaw> <Pitch>}
       permission: civncraft.sethub
-      permission-message: You don't have permission <permission>!
+      permission-message: &cYou don't have permission <permission>!
    hubloc:
-      description: sethub command.
+      description: Showing hub location command.
       aliases: [hublocation, hubl, lobbyloc]
       usage: /<command>
       permission: civncraft.hubloc
-      permission-message: You don't have permission <permission>!
+      permission-message: &cYou don't have permission <permission>!
    seppuku:
-      description: seppuku command.
+      description: Die command.
       aliases: [die, death, sinu]
       usage: /<command>
       permission: civncraft.seppuku
-      permission-message: You don't have permission <permission>!
+      permission-message: &cYou don't have permission <permission>!
    asiba:
-      description: asiba command.
+      description: Asiba command.
       aliases: [a, ashiba, footing]
       usage: /<command> <BlockID> <Amount> or /<command> to <BlockID>
       permission: civncraft.asiba
-      permission-message: You don't have permission <permission>!
+      permission-message: &cYou don't have permission <permission>!
    civn:
-      description: infomation command.
+      description: Showing infomation command.
       aliases: civncraft
       usage: /<command>
       permission: civncraft.info
-      permission-message: You don't have permission <permission>!
+      permission-message: &cYou don't have permission <permission>!
+   pdata:
+      description: Showing players data command.
+      aliases: pd
+      usage: /<command>
+      permission: civncraft.pdata
+      permission-message: &cYou don't have permission <permission>!
+   ops:
+      description: Showing operators command.
+      aliases: oplist
+      usage: /<command>
+      permission: civncraft.ops
+      permission-message: &cYou don't have permission <permission>!
+   rename:
+      description: Changing an item in your hand.
+      aliases: rn
+      usage: /<command>
+      permission: civncraft.rename
+      permission-message: &cYou don't have permission <permission>!
+   getlocation:
+      description: Getting your country name.
+      aliases: gl
+      usage: /<command>
+      permission: civncraft.getlocation
+      permission-message: &cYou don't have permission <permission>!
 permissions:
    civncraft.*:
      description: All access CIVNCraft commands.
@@ -51,21 +75,35 @@ permissions:
        civncraft.seppuku: true
        civncraft.asiba: true
        civncraft.info: true
+       civncraft.pdata: true
+       civncraft.ops: true
    civncraft.hub:
-     description: Hub command.
+     description: Moving to hub command.
      default: true
    civncraft.sethub:
-     description: Set hub command.
+     description: Setting hub command.
      default: op
    civncraft.hubloc:
-     description: Show hub location command.
+     description: Showing hub location command.
      default: op
    civncraft.seppuku:
-     description: Seppuku command.
+     description: Die command.
      default: true
    civncraft.asiba:
-     description: Create asiba command.
+     description: Asiba command.
      default: op
    civncraft.info:
-     description: Show infomation command.
+     description: Showing infomation command.
      default: true
+   civncraft.pdata:
+     description: Showing players data command.
+     default: op
+   civncraft.ops:
+     description: Showing operators command.
+     default: true
+   civncraft.rename:
+     description: Changing an item in your hand.
+     default: op
+   civncraft.getlocation:
+     description: Getting your country name.
+     default: op
