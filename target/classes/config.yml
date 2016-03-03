@@ -7,22 +7,4 @@ hub:
   z:
   yaw:
   pitch:
-worlds:
-  world:
-    difficulty:
-  world_nether:
-    difficulty:
-  world_the_end:
-    difficulty:
-  Survival:
-    difficulty:
-  Survival_nether:
-    difficulty:
-  Survival_end:
-    difficulty:
-  Shigen:
-    difficulty:
-  Shigen2:
-    difficulty:
-  PvP:
-    difficulty:
+EventLogFile: EventLog.txt

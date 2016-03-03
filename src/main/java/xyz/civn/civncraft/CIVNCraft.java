@@ -1,8 +1,6 @@
 package xyz.civn.civncraft;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
+import net.md_5.bungee.api.ChatColor;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -25,10 +23,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import ru.tehkode.permissions.PermissionUser;
 import ru.tehkode.permissions.bukkit.PermissionsEx;
-
-import com.maxmind.geoip2.DatabaseReader;
-import com.maxmind.geoip2.exception.GeoIp2Exception;
-import com.maxmind.geoip2.model.CountryResponse;
 
 public class CIVNCraft extends JavaPlugin implements Listener
 {
@@ -53,7 +47,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 	public void onReload()
 	{
-		getLogger().info(C.RED + "Reloading!");
+		getServer().broadcastMessage(prefix + C.GREEN + C.B + "Reloading!");
 		this.saveConfig();
 		this.reloadConfig();
 	}
@@ -547,120 +541,16 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			return true;
 		}
 
-
-		else if (cmd.getName().equalsIgnoreCase("getlocation"))
-		{
-			if (args.length == 1)
-			{
-				Player player = Bukkit.getServer().getPlayer(args[0]);
-
-				if (player == null)
-				{
-					sender.sendMessage(prefix + C.BLUE + args[1] + C.RED + " isn't in this server!");
-					return false;
-				}
-
-				InetAddress address = player.getAddress().getAddress();
-				String country;
-
-				try
-				{
-					country = GetLocation(address, sender);
-				}
-
-				catch (Exception e)
-				{
-					SendErrorMessage.Failed(sender);
-					return false;
-				}
-
-				if (country == null)
-				{
-					SendErrorMessage.Failed(sender);
-					return false;
-				}
-
-				sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.D_GREEN + " is in " + C.BLUE + country);
-				return true;
-			}
-		}
-
-
 		return false;
 	}
 
-	public String GetLocation(InetAddress address, CommandSender sender) throws IOException, GeoIp2Exception
-	{
-		InputStream in;
-		DatabaseReader countryDB;
-		CountryResponse res;
-
-		//GetDataBase
-		try
-		{
-			in = this.getResource("GeoLite2-County.mmdb");
-		}
-
-		catch (Exception e)
-		{
-			sender.sendMessage(prefix + C.RED + "Failed! => GetDataBase");
-			return null;
-		}
-
-		//ReadDataBase
-		try
-		{
-			countryDB = new DatabaseReader.Builder(in).build();
-		}
-
-		catch (Exception e)
-		{
-			sender.sendMessage(prefix + C.RED + "Failed! => ReadDataBase");
-			return null;
-		}
-
-		//GetCountry
-		try
-		{
-			res = countryDB.country(address);
-		}
-
-		catch (Exception e)
-		{
-			sender.sendMessage(prefix + C.RED + "Failed! => GetCountry");
-			return null;
-		}
-
-		return res.getCountry().getName();
-	}
 
 	public String GetPlayerPrefix(Player player)
 	{
 		PermissionUser user = PermissionsEx.getUser(player);
 		String prefix = user.getPrefix();
-		prefix = prefix.replace("&0", (CharSequence) C.$0);
-		prefix = prefix.replace("&1", (CharSequence) C.$1);
-		prefix = prefix.replace("&2", (CharSequence) C.$2);
-		prefix = prefix.replace("&3", (CharSequence) C.$3);
-		prefix = prefix.replace("&4", (CharSequence) C.$4);
-		prefix = prefix.replace("&5", (CharSequence) C.$5);
-		prefix = prefix.replace("&6", (CharSequence) C.$6);
-		prefix = prefix.replace("&7", (CharSequence) C.$7);
-		prefix = prefix.replace("&8", (CharSequence) C.$8);
-		prefix = prefix.replace("&9", (CharSequence) C.$9);
-		prefix = prefix.replace("&a", (CharSequence) C.$a);
-		prefix = prefix.replace("&b", (CharSequence) C.$b);
-		prefix = prefix.replace("&c", (CharSequence) C.$c);
-		prefix = prefix.replace("&d", (CharSequence) C.$d);
-		prefix = prefix.replace("&e", (CharSequence) C.$e);
-		prefix = prefix.replace("&f", (CharSequence) C.$f);
-		prefix = prefix.replace("&k", (CharSequence) C.$k);
-		prefix = prefix.replace("&l", (CharSequence) C.$l);
-		prefix = prefix.replace("&m", (CharSequence) C.$m);
-		prefix = prefix.replace("&n", (CharSequence) C.$n);
-		prefix = prefix.replace("&o", (CharSequence) C.$o);
-		prefix = prefix.replace("&r", (CharSequence) C.$r);
-		return prefix;
+		prefix = prefix.replace("%world", player.getWorld().getName());
+		return ChatColor.translateAlternateColorCodes('&', prefix);
 	}
 
 	@EventHandler
@@ -673,15 +563,13 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 		if (newl > oldl)
 		{
-			Bukkit.broadcastMessage(prefix + C.D_GREEN + "" + C.B + "[" + C.GREEN + "" + C.B + p.getWorld().getName() + C.D_GREEN + "" + C.B + "] " + GetPlayerPrefix(p) + pn + C.GOLD + " leveled up " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
+			Bukkit.broadcastMessage(prefix + GetPlayerPrefix(p) + pn + C.GOLD + " leveled up " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
 		}
 
 		else if (newl < oldl)
 		{
-			Bukkit.broadcastMessage(prefix + C.D_GREEN + "" + C.B + "[" + C.GREEN + "" + C.B + p.getWorld().getName() + C.D_GREEN + "" + C.B + "] " + GetPlayerPrefix(p) + pn + C.GOLD + " leveled down " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
+			Bukkit.broadcastMessage(prefix + GetPlayerPrefix(p) + pn + C.GOLD + " leveled down " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
 		}
-
-		return;
 	}
 
 	@EventHandler
@@ -691,17 +579,15 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		String pn = p.getName();
 		int exp = e.getAmount();
 
-		Bukkit.broadcastMessage(prefix + C.D_GREEN + "" + C.B + "[" + C.GREEN + "" + C.B + p.getWorld().getName() + C.D_GREEN + "" + C.B + "] " + GetPlayerPrefix(p) + pn + C.GOLD + " got " + C.RED + exp + C.GOLD + " EXP!");
-		return;
+		Bukkit.broadcastMessage(prefix + GetPlayerPrefix(p) + pn + C.GOLD + " got " + C.RED + exp + C.GOLD + " EXP!");
 	}
 
 	@EventHandler
 	public void onPlayerJoinEvent (PlayerJoinEvent e)
 	{
 		Player player = e.getPlayer();
-		String world = player.getWorld().getName();
 
-		e.setJoinMessage(prefix + C.D_GREEN + "" + C.B + "[" + C.GREEN + "" + C.B + world + C.D_GREEN + "" + C.B + "] " + GetPlayerPrefix(player) + player.getName() + C.GOLD + " has joined.");
+		e.setJoinMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + " has joined.");
 
 		for (Player players: Bukkit.getServer().getOnlinePlayers())
 		{
@@ -710,8 +596,6 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				players.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + "'s IP Address is " + C.GREEN + player.getAddress().getAddress().toString().replace("/", ""));
 			}
 		}
-
-		return;
 	}
 
 	@EventHandler
@@ -720,7 +604,6 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		Player player = e.getPlayer();
 
 		e.setQuitMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + " has left.");
-		return;
 	}
 
 	@EventHandler
@@ -731,7 +614,6 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		String to = player.getWorld().getName();
 
 		Bukkit.getServer().broadcastMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + " has moved from " + C.GREEN + from + C.GOLD + " to " + C.GREEN + to);
-		return;
 	}
 
 	@SuppressWarnings("deprecation")
@@ -762,7 +644,5 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 			damager.sendMessage(prefix + C.RED + "You changed his name! => " + name);
 		}
-
-		return;
 	}
 }
