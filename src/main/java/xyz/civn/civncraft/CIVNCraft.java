@@ -20,25 +20,24 @@ import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import ru.tehkode.permissions.PermissionUser;
 import ru.tehkode.permissions.bukkit.PermissionsEx;
+import xyz.civn.civncraft.Constant.C;
+import xyz.civn.civncraft.Constant.Prefix;
+import xyz.civn.civncraft.SendMessage.SendErrorMessage;
+import xyz.civn.civncraft.SendMessage.SendHelpMessage;
+import xyz.civn.civncraft.SendMessage.SendReportMessage;
 
 public class CIVNCraft extends JavaPlugin implements Listener
 {
 	private static String prefix = Prefix.prefix;
-	private static String[] contents = {"world", "location", "level", "address", "gamemode", "health"};
+	private static String[] contents = {"world", "location", "level", "address", "gamemode", "health", "enderchest", "inventory"};
 
 	private FileConfiguration cf = getConfig();
 	private CIVNCraft main = this;
-
-	private String hubW =  cf.getString("hub.world");
-	private double hubX =  cf.getDouble("hub.x");
-	private double hubY =  cf.getDouble("hub.y");
-	private double hubZ =  cf.getDouble("hub.z");
-	private float hubYAW = (float) cf.getDouble("hub.yaw");
-	private float hubPITCH = (float) cf.getDouble("hub.pitch");
 
 	@Override
 	public void onEnable()
@@ -75,6 +74,12 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			}
 
 			Player p = (Player) sender;
+			String hubW =  cf.getString("hub.world");
+			double hubX =  cf.getDouble("hub.x");
+			double hubY =  cf.getDouble("hub.y");
+			double hubZ =  cf.getDouble("hub.z");
+			float hubYAW = (float) cf.getDouble("hub.yaw");
+			float hubPITCH = (float) cf.getDouble("hub.pitch");
 
 			if (hubW == null)
 			{
@@ -96,16 +101,16 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 		else if (cmd.getName().equalsIgnoreCase("sethub"))
 		{
-			if (!(sender instanceof Player))
-			{
-				SendErrorMessage.SenderIsNotPlayer(sender);
-				return false;
-			}
-
-			Player p = (Player) sender;
-
 			if (args.length == 0)
 			{
+				if (!(sender instanceof Player))
+				{
+					SendErrorMessage.SenderIsNotPlayer(sender);
+					return false;
+				}
+
+				Player p = (Player) sender;
+
 				cf.set("hub.world", p.getWorld().getName());
 				cf.set("hub.x", p.getLocation().getX());
 				cf.set("hub.y", p.getLocation().getY());
@@ -258,17 +263,57 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 		else if (cmd.getName().equalsIgnoreCase("asiba"))
 		{
+			if (args.length == 0)
+			{
+				SendHelpMessage.ShowAsibaHelp(sender);
+				return true;
+			}
+
 			if (!(sender instanceof Player))
 			{
 				SendErrorMessage.SenderIsNotPlayer(sender);
 				return false;
 			}
 
-			if (args.length == 1 | args.length == 2)
-			{
-				Player p = (Player) sender;
-				Location l = p.getLocation();
+			Player p = (Player) sender;
+			Location l = p.getLocation();
 
+			/*[/asiba *****]*/
+			if (args.length == 1)
+			{
+				int id;
+
+				try
+				{
+					id = Integer.parseInt(args[0]);
+				}
+
+				catch (Exception e)
+				{
+					Material m = Material.getMaterial(args[0].toUpperCase());
+
+					if (setMaterial(m, l, sender, args) == false)
+					{
+						return false;
+					}
+
+					return true;
+				}
+
+				Material m = Material.getMaterial(id);
+
+				if (setMaterial(m, l, sender, args) == false)
+				{
+					return false;
+				}
+
+				return true;
+			}
+
+			/*[/asiba ***** *****]*/
+			else if (args.length == 2)
+			{
+				/*[/asiba to *****]*/
 				if (args[0].equalsIgnoreCase("to"))
 				{
 					if (args[1] == null)
@@ -284,8 +329,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 					catch (Exception e)
 					{
-						String block = args[1].toUpperCase();
-						Material m = Material.getMaterial(block);
+						Material m = Material.getMaterial(args[1].toUpperCase());
 
 						if (m == null)
 						{
@@ -306,8 +350,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 						}
 					}
 
-					int block = (int) new Integer (args[1]);
-					Material m = Material.getMaterial(block);
+					Material m = Material.getMaterial((int) new Integer (args[1]));
 
 					if (m == null)
 					{
@@ -328,196 +371,325 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					}
 				}
 
+				/*[/asiba ***** *****]*/
+				int amount;
+
 				try
 				{
-					Integer.parseInt(args[0]);
+					amount = Integer.parseInt(args[1]);
 				}
 
 				catch (Exception e)
 				{
-					String block = args[0].toUpperCase();
-					Material m = Material.getMaterial(block);
+					SendErrorMessage.Failed(sender);
+					return false;
+				}
 
-					if (m == null)
+				int id;
+
+				try
+				{
+					id = Integer.parseInt(args[0]);
+				}
+
+				catch (Exception e)
+				{
+					Material m = Material.getMaterial(args[0].toUpperCase());
+
+					if (setMaterial(m, l, sender, args) == false)
 					{
-						sender.sendMessage(prefix + C.RED + args[0] + C.GOLD + " doesn't exist!");
 						return false;
 					}
 
-					if (args.length == 2)
-					{
-						try
-						{
-							Integer.parseInt(args[1]);
-						}
-
-						catch (Exception er)
-						{
-							SendErrorMessage.Failed(sender);
-							return false;
-						}
-
-						int amount = (int) new Integer (args[1]);
-
-						for (int i = 1; i <= amount; i++)
-						{
-							l.setY(l.getY() - 1);
-							l.getBlock().setType(m);
-						}
-
-						return false;
-					}
-
-					l.setY(l.getY() - 1);
-					l.getBlock().setType(m);
 					return true;
 				}
 
-				int block = (int) new Integer (args[0]);
-				Material m = Material.getMaterial(block);
+				Material m = Material.getMaterial(id);
 
 				if (m == null)
 				{
-					sender.sendMessage(prefix + C.AQUA + "ItemID [" + C.RED + block + C.AQUA + "]" + C.GOLD + " doesn't exist!");
+					sender.sendMessage(prefix + C.RED + args[1] + C.GOLD + " doesn't exist!");
 					return false;
 				}
 
-				if (args.length == 2)
+				for (int i = 1; i <= amount; i++)
 				{
-					try
-					{
-						Integer.parseInt(args[1]);
-					}
-
-					catch (Exception e)
-					{
-						SendErrorMessage.Failed(sender);
-						return false;
-					}
-
-					int amount = (int) new Integer (args[1]);
-
-					for (int i = 1; i <= amount; i++)
-					{
-						l.setY(l.getY() - 1);
-						l.getBlock().setType(m);
-					}
-
-					return false;
+					l.setY(l.getY() - 1);
+					l.getBlock().setType(m);
 				}
 
-				l.setY(l.getY() - 1);
-				l.getBlock().setType(m);
 				return true;
 			}
 
-			SendErrorMessage.ExtraArguments(sender);
-			return false;
+			else
+			{
+				SendErrorMessage.ExtraArguments(sender);
+				return false;
+			}
 		}
 
 		if (cmd.getName().equalsIgnoreCase("pdata"))
 		{
+			/* [/pdata]*/
 			if (args.length == 0)
 			{
 				sender.sendMessage(prefix + C.GOLD + "/pdata command was made by " + C.RED + "" + C.B + "CIVN");
 				return true;
 			}
 
-			else if (args[0].equalsIgnoreCase("?") | args[0].equalsIgnoreCase("help"))
+			/* [/pdata *****]*/
+			else if (args.length == 1)
 			{
-				SendHelpMessage.ShowPdataHelp(sender, contents, main);
-				return true;
+				/* [/pdata help]*/
+				if (args[0].equalsIgnoreCase("?") | args[0].equalsIgnoreCase("help"))
+				{
+					SendHelpMessage.ShowPdataHelp(sender, contents, main);
+					return true;
+				}
+
+				else
+				{
+					SendErrorMessage.Failed(sender);
+					return false;
+				}
 			}
 
-			if (!(sender instanceof Player))
+			/* [/pdata ***** *****]*/
+			else if (args.length == 2)
 			{
-				SendErrorMessage.SenderIsNotPlayer(sender);
+				Player player = getServer().getPlayer(args[1]);
+
+				if (player == null)
+				{
+					SendErrorMessage.PlayerIsNotIn(sender, args);
+					return false;
+				}
+
+				else
+				{
+					if (args[0].equalsIgnoreCase("world"))
+					{
+						String world = player.getWorld().getName();
+
+						sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + " is in " + C.D_GREEN + world + C.BLUE + "!");
+						return true;
+					}
+
+					else if (args[0].equalsIgnoreCase("health"))
+					{
+						double health = player.getHealth();
+
+						sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + "'s health is " + C.D_GREEN + health + C.BLUE + "!");
+						return true;
+					}
+
+					else if (args[0].equalsIgnoreCase("location"))
+					{
+						Location location = player.getLocation();
+						double[] l = {location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()};
+
+						SendReportMessage.ShowPlayerLocation(sender, player, l, GetPlayerPrefix(player));
+						return true;
+					}
+
+					else if (args[0].equalsIgnoreCase("level"))
+					{
+						int level = player.getLevel();
+
+						sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + "'s level is " + C.D_GREEN + level + C.BLUE + "!");
+						return true;
+					}
+
+					else if (args[0].equalsIgnoreCase("address") | args[0].equalsIgnoreCase("ip"))
+					{
+						String address = player.getAddress().getAddress().toString().replace("/", "");
+
+						sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + "'s address is " + C.D_GREEN + address + C.BLUE + "!");
+						return true;
+					}
+
+					else if (args[0].equalsIgnoreCase("gamemode"))
+					{
+						String gamemode = player.getGameMode().name();
+
+						sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + "'s gamemode is " + C.D_GREEN + gamemode + C.BLUE + "!");
+						return true;
+					}
+
+					else if (args[0].equalsIgnoreCase("enderchest") | (args[0].equalsIgnoreCase("ec")))
+					{
+						int i = 1;
+
+						sender.sendMessage(prefix);
+
+						for (ItemStack is: player.getEnderChest())
+						{
+							try
+							{
+								SendReportMessage.ShowItem(sender, is, i);
+							}
+
+							catch (Exception e)
+							{
+								continue;
+							}
+
+							i++;
+						}
+
+						if (i == 1)
+						{
+							SendReportMessage.HasNoItems(sender, player);
+						}
+
+						return true;
+					}
+
+					else if (args[0].equalsIgnoreCase("inventory") | (args[0].equalsIgnoreCase("inv")))
+					{
+						int i = 1;
+
+						sender.sendMessage(prefix);
+
+						for (ItemStack is: player.getInventory())
+						{
+							try
+							{
+								SendReportMessage.ShowItem(sender, is, i);
+							}
+
+							catch (Exception e)
+							{
+								continue;
+							}
+
+							i++;
+						}
+
+						if (i == 1)
+						{
+							SendReportMessage.HasNoItems(sender, player);
+						}
+
+						return true;
+					}
+				}
+			}
+
+			else
+			{
+				SendErrorMessage.Failed(sender);
+				return false;
+			}
+		}
+
+		else if (cmd.getName().equalsIgnoreCase("copyinventory"))
+		{
+			if (args.length == 0)
+			{
+				SendErrorMessage.MissingArguments(sender);
 				return false;
 			}
 
-			Player player = getServer().getPlayer(args[1]);
-
-			//プレイヤー取得失敗
-			if (player == null)
+			else if (args.length == 1)
 			{
-				SendErrorMessage.PlayerIsNotIn(sender, args);
-				return false;
-			}
+				Player to = (Player)sender;
+				Player from = getServer().getPlayer(args[0]);
 
-			if (args[0].equalsIgnoreCase("world"))
-			{
-				String world = player.getWorld().getName();
+				if (to == from)
+				{
+					SendErrorMessage.Failed(sender);
+					return false;
+				}
 
-				sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + " is in " + C.D_GREEN + world + C.BLUE + "!");
+				else if (from == null)
+				{
+					SendErrorMessage.PlayerIsNotIn(sender, args);
+					return false;
+				}
+
+				to.getInventory().clear();
+
+				for (ItemStack is: from.getInventory())
+				{
+					try
+					{
+						to.getInventory().addItem(is);
+					}
+
+					catch (Exception e)
+					{
+						continue;
+					}
+				}
+
 				return true;
 			}
 
-			else if (args[0].equalsIgnoreCase("health"))
+			else if (args.length == 2)
 			{
-				double health = player.getHealth();
+				Player from = getServer().getPlayer(args[0]);
+				Player to = getServer().getPlayer(args[1]);
 
-				sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + "'s health is " + C.D_GREEN + health + C.BLUE + "!");
+				if (to == from)
+				{
+					SendErrorMessage.Failed(sender);
+					return false;
+				}
+
+				else if (from == null)
+				{
+					sender.sendMessage(prefix + C.BLUE + args[0] + C.RED + " isn't in this server!");
+					return false;
+				}
+
+				else if (to == null)
+				{
+					sender.sendMessage(prefix + C.BLUE + args[1] + C.RED + " isn't in this server!");
+					return false;
+				}
+
+				to.getInventory().clear();
+
+				for (ItemStack is: from.getInventory())
+				{
+					try
+					{
+						to.getInventory().addItem(is);
+					}
+
+					catch (Exception e)
+					{
+						continue;
+					}
+				}
+
 				return true;
-
 			}
-
-			else if (args[0].equalsIgnoreCase("location"))
-			{
-				Location location = player.getLocation();
-				double[] l = {location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()};
-
-				SendReportMessage.ShowPlayerLocation(sender, player, l, GetPlayerPrefix(player));
-				return true;
-			}
-
-			else if (args[0].equalsIgnoreCase("level"))
-			{
-				int level = player.getLevel();
-
-				sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + "'s level is " + C.D_GREEN + level + C.BLUE + "!");
-				return true;
-			}
-
-			else if (args[0].equalsIgnoreCase("address") | args[0].equalsIgnoreCase("ip"))
-			{
-				String address = player.getAddress().getAddress().toString().replace("/", "");
-
-				sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + "'s address is " + C.D_GREEN + address + C.BLUE + "!");
-				return true;
-			}
-
-			else if (args[0].equalsIgnoreCase("gamemode"))
-			{
-				String gamemode = player.getGameMode().name();
-
-				sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + "'s gamemode is " + C.D_GREEN + gamemode + C.BLUE + "!");
-				return true;
-			}
-
-			SendErrorMessage.DoesNotExistInContents(sender, args);
-			return false;
 		}
 
 		else if (cmd.getName().equalsIgnoreCase("ops"))
 		{
-			sender.sendMessage(prefix + C.BLUE + "Online Operators!");
+			sender.sendMessage(prefix + C.BLUE + "Operators!");
 
 			int i = 1;
 
-			for (OfflinePlayer p : Bukkit.getServer().getOperators())
+			for (OfflinePlayer p : getServer().getOfflinePlayers())
 			{
-				Player player = (Player) p;
-
-				sender.sendMessage(C.D_GREEN + "" + i + ": " + GetPlayerPrefix(player) + player.getName());
-				i++;
+				if (p.isOp())
+				{
+					sender.sendMessage(C.D_GREEN + "" + i + ": " + p.getName());
+					i++;
+				}
 			}
 
 			return true;
 		}
 
+		/*機能しない*/
 		else if (cmd.getName().equalsIgnoreCase("rename"))
 		{
-			if (sender instanceof Player)
+			if (!(sender instanceof Player))
 			{
 				SendErrorMessage.SenderIsNotPlayer(sender);
 				return false;
@@ -529,7 +701,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 				try
 				{
-					player.getInventory().getItemInMainHand().getItemMeta().setDisplayName(args[0]);
+					player.getInventory().getItemInHand().getItemMeta().setDisplayName(args[0]);
 				}
 
 				catch (Exception e)
@@ -558,8 +730,21 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 	private String ChatFormatter(String prefix2, Player player)
 	{
-		prefix = prefix.replace("%world", player.getWorld().getName());
-		return prefix;
+		prefix2 = prefix2.replace("%world", player.getWorld().getName());
+		return prefix2;
+	}
+
+	private boolean setMaterial(Material m, Location l, CommandSender sender, String[] args)
+	{
+		if (m == null)
+		{
+			SendErrorMessage.DoesNotExist(sender, args);
+			return false;
+		}
+
+		l.setY(l.getY() - 1);
+		l.getBlock().setType(m);
+		return true;
 	}
 
 	@EventHandler
@@ -602,7 +787,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		{
 			if (players.isOp())
 			{
-				players.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + "'s IP Address is " + C.GREEN + player.getAddress().getAddress().toString().replace("/", ""));
+				players.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + "'s IP: " + C.GREEN + player.getAddress().getAddress().toString().replace("/", ""));
 			}
 		}
 	}

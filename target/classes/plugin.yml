@@ -4,67 +4,74 @@ author: CIVN
 website: https://twitter.com/oktm_style/
 main: xyz.civn.civncraft.CIVNCraft
 version: 1.2
+prefix: [CIVNCraft]
 commands:
    hub:
       description: Moving to hub command.
       aliases: [lobby, spawn]
       usage: /<command>
       permission: civncraft.hub
-      permission-message: &cYou don't have permission <permission>!
+      permission-message: You don't have permission <permission>!
    sethub:
       description: Setting hub command.
       aliases: [setlobby, lobbyset, hubset]
-      usage: /<command> {<X> <Y> <Z> <Yaw> <Pitch>}
+      usage: /<command> or /<command> {<X> <Y> <Z>} or /<command> {<X> <Y> <Z> <Yaw> <Pitch>}
       permission: civncraft.sethub
-      permission-message: &cYou don't have permission <permission>!
+      permission-message: You don't have permission <permission>!
    hubloc:
       description: Showing hub location command.
       aliases: [hublocation, hubl, lobbyloc]
       usage: /<command>
       permission: civncraft.hubloc
-      permission-message: &cYou don't have permission <permission>!
+      permission-message: You don't have permission <permission>!
    seppuku:
       description: Die command.
       aliases: [die, death, sinu]
       usage: /<command>
       permission: civncraft.seppuku
-      permission-message: &cYou don't have permission <permission>!
+      permission-message: You don't have permission <permission>!
    asiba:
       description: Asiba command.
       aliases: [a, ashiba, footing]
-      usage: /<command> <BlockID> <Amount> or /<command> to <BlockID>
+      usage: /<command> or /<command> <BlockID> <Amount> or /<command> to <BlockID>
       permission: civncraft.asiba
-      permission-message: &cYou don't have permission <permission>!
+      permission-message: You don't have permission <permission>!
    civn:
       description: Showing infomation command.
       aliases: civncraft
       usage: /<command>
       permission: civncraft.info
-      permission-message: &cYou don't have permission <permission>!
+      permission-message: You don't have permission <permission>!
    pdata:
       description: Showing players data command.
       aliases: pd
       usage: /<command>
       permission: civncraft.pdata
-      permission-message: &cYou don't have permission <permission>!
+      permission-message: You don't have permission <permission>!
    ops:
       description: Showing operators command.
       aliases: oplist
       usage: /<command>
       permission: civncraft.ops
-      permission-message: &cYou don't have permission <permission>!
+      permission-message: You don't have permission <permission>!
    rename:
       description: Changing an item in your hand.
       aliases: rn
       usage: /<command>
       permission: civncraft.rename
-      permission-message: &cYou don't have permission <permission>!
+      permission-message: You don't have permission <permission>!
    getlocation:
       description: Getting your country name.
       aliases: gl
       usage: /<command>
       permission: civncraft.getlocation
-      permission-message: &cYou don't have permission <permission>!
+      permission-message: You don't have permission <permission>!
+   copyinventory:
+      description: Copying inventory command.
+      aliases: [copyinv, ci, cinv]
+      usage: /<command>
+      permission: civncraft.copyinventory
+      permission-message: You don't have permission <permission>!
 permissions:
    civncraft.*:
      description: All access CIVNCraft commands.
@@ -106,4 +113,7 @@ permissions:
      default: op
    civncraft.getlocation:
      description: Getting your country name.
+     default: op
+   civncraft.copyinventory:
+     description: Copying inventory command.
      default: op
