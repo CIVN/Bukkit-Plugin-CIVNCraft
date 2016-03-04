@@ -5,6 +5,7 @@ import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -26,30 +27,39 @@ import ru.tehkode.permissions.bukkit.PermissionsEx;
 
 public class CIVNCraft extends JavaPlugin implements Listener
 {
-	public static String prefix = Prefix.prefix;
-	public static String[] contents = {"world", "location", "level", "address", "gamemode", "health"};
-	public FileConfiguration cf = this.getConfig();
+	private static String prefix = Prefix.prefix;
+	private static String[] contents = {"world", "location", "level", "address", "gamemode", "health"};
+
+	private FileConfiguration cf = getConfig();
+	private CIVNCraft main = this;
+
+	private String hubW =  cf.getString("hub.world");
+	private double hubX =  cf.getDouble("hub.x");
+	private double hubY =  cf.getDouble("hub.y");
+	private double hubZ =  cf.getDouble("hub.z");
+	private float hubYAW = (float) cf.getDouble("hub.yaw");
+	private float hubPITCH = (float) cf.getDouble("hub.pitch");
 
 	@Override
 	public void onEnable()
 	{
-		getLogger().info("Enable CIVNCraft! => Ver: " + this.getDescription().getVersion());
+		getLogger().info("Enable CIVNCraft! => Ver: " + getDescription().getVersion());
 		getServer().getPluginManager().registerEvents(this, this);
-		this.reloadConfig();
+		reloadConfig();
 	}
 
 	@Override
 	public void onDisable()
 	{
 		getLogger().info("Disable CIVNCraft!");
-		this.saveConfig();
+		saveConfig();
 	}
 
 	public void onReload()
 	{
 		getServer().broadcastMessage(prefix + C.GREEN + C.B + "Reloading!");
-		this.saveConfig();
-		this.reloadConfig();
+		saveConfig();
+		reloadConfig();
 	}
 
 	@SuppressWarnings({ "deprecation" })
@@ -65,12 +75,6 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			}
 
 			Player p = (Player) sender;
-			String hubW =  cf.getString("hub.world");
-			double hubX =  cf.getDouble("hub.x");
-			double hubY =  cf.getDouble("hub.y");
-			double hubZ =  cf.getDouble("hub.z");
-			float hubYAW = (float) cf.getDouble("hub.yaw");
-			float hubPITCH = (float) cf.getDouble("hub.pitch");
 
 			if (hubW == null)
 			{
@@ -78,7 +82,15 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				return false;
 			}
 
-			p.teleport(new Location (Bukkit.getServer().getWorld (hubW), hubX, hubY, hubZ, hubYAW, hubPITCH));
+			World world = getServer().getWorld (hubW);
+
+			if (world == null)
+			{
+				SendErrorMessage.WorldDoesNotExist(world, sender);
+				return false;
+			}
+
+			p.teleport(new Location (world, hubX, hubY, hubZ, hubYAW, hubPITCH));
 			return true;
 		}
 
@@ -100,8 +112,8 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				cf.set("hub.z", p.getLocation().getZ());
 				cf.set("hub.yaw", p.getLocation().getYaw());
 				cf.set("hub.pitch", p.getLocation().getPitch());
-				this.saveConfig();
-				this.reloadConfig();
+				saveConfig();
+				reloadConfig();
 
 				SendReportMessage.HubWasChanged(sender);
 				return true;
@@ -109,78 +121,78 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 			else if (args.length == 4)
 			{
-				World w = Bukkit.getServer().getWorld(args[0]);
+				World w = getServer().getWorld(args[0]);
 
-				if (w != null)
+				if (w == null)
 				{
-					cf.set("hub.world", args[0]);
-
-					try
-					{
-						for (int i = 1; i <= 3; i++)
-						{
-							Double.parseDouble (args[i]);
-						}
-					}
-
-					catch (Exception e)
-					{
-						SendErrorMessage.Failed(sender);
-						return false;
-					}
-
-					cf.set("hub.x", Double.parseDouble (args[1]));
-					cf.set("hub.y", Double.parseDouble (args[2]));
-					cf.set("hub.z", Double.parseDouble (args[3]));
-					cf.set("hub.yaw", 0);
-					cf.set("hub.pitch", 0);
-					this.saveConfig();
-					this.reloadConfig();
-
-					SendReportMessage.HubWasChanged(sender);
-					return true;
+					getServer().broadcastMessage(prefix + C.GOLD + args[0] + " doesn't exist!");
+					return false;
 				}
 
-				Bukkit.getServer().broadcastMessage(prefix + C.GOLD + args[0] + " doesn't exist!");
-				return false;
+				cf.set("hub.world", args[0]);
+
+				try
+				{
+					for (int i = 1; i <= 3; i++)
+					{
+						Double.parseDouble (args[i]);
+					}
+				}
+
+				catch (Exception e)
+				{
+					SendErrorMessage.Failed(sender);
+					return false;
+				}
+
+				cf.set("hub.x", Double.parseDouble (args[1]));
+				cf.set("hub.y", Double.parseDouble (args[2]));
+				cf.set("hub.z", Double.parseDouble (args[3]));
+				cf.set("hub.yaw", 0);
+				cf.set("hub.pitch", 0);
+				saveConfig();
+				reloadConfig();
+
+				SendReportMessage.HubWasChanged(sender);
+				return true;
 			}
 
 			else if (args.length == 6)
 			{
-				World w = Bukkit.getServer().getWorld(args[0]);
+				World w = getServer().getWorld(args[0]);
 
-				if (w != null)
+				if (w == null)
 				{
-					cf.set("hub.world", args[0]);
-
-					try
-					{
-						for (int i = 1; i <= 5; i++)
-						{
-							Double.parseDouble (args[i]);
-						}
-					}
-
-					catch (Exception e)
-					{
-						SendErrorMessage.Failed(sender);
-						return false;
-					}
-
-					cf.set("hub.x", Double.parseDouble (args[1]));
-					cf.set("hub.y", Double.parseDouble (args[2]));
-					cf.set("hub.z", Double.parseDouble (args[3]));
-					cf.set("hub.yaw", Double.parseDouble (args[4]));
-					cf.set("hub.pitch", Double.parseDouble (args[5]));
-					this.saveConfig();
-					this.reloadConfig();
-
-					SendReportMessage.HubWasChanged(sender);
-					return true;
+					SendErrorMessage.DoesNotExist(sender, args);
+					return false;
 				}
 
-				SendErrorMessage.DoesNotExist(sender, args);
-				return false;
+				cf.set("hub.world", args[0]);
+
+				try
+				{
+					for (int i = 1; i <= 5; i++)
+					{
+						Double.parseDouble (args[i]);
+					}
+				}
+
+				catch (Exception e)
+				{
+					SendErrorMessage.Failed(sender);
+					return false;
+				}
+
+				cf.set("hub.x", Double.parseDouble (args[1]));
+				cf.set("hub.y", Double.parseDouble (args[2]));
+				cf.set("hub.z", Double.parseDouble (args[3]));
+				cf.set("hub.yaw", Double.parseDouble (args[4]));
+				cf.set("hub.pitch", Double.parseDouble (args[5]));
+				saveConfig();
+				reloadConfig();
+
+				SendReportMessage.HubWasChanged(sender);
+				return true;
 			}
 
 			return false;
@@ -188,14 +200,14 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 		else if (cmd.getName().equalsIgnoreCase("hubloc"))
 		{
-			if (args.length == 0)
+			if (args.length != 0)
 			{
-				SendReportMessage.ShowHubLocation(sender, cf);
-				return true;
+				SendErrorMessage.ExtraArguments(sender);
+				return false;
 			}
 
-			SendErrorMessage.ExtraArguments(sender);
-			return false;
+			SendReportMessage.ShowHubLocation(sender, cf);
+			return true;
 		}
 
 		else if (cmd.getName().equalsIgnoreCase("seppuku"))
@@ -208,14 +220,14 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 			if (args.length == 0)
 			{
-				Player p = (Player) sender;
-
-				p.setHealth(0);
-				return true;
+				SendErrorMessage.ExtraArguments(sender);
+				return false;
 			}
 
-			SendErrorMessage.ExtraArguments(sender);
-			return false;
+			Player p = (Player) sender;
+
+			p.setHealth(0);
+			return true;
 		}
 
 		else if (cmd.getName().equalsIgnoreCase("civn"))
@@ -232,11 +244,11 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 				if (p.isOp())
 				{
-					SendHelpMessage.ShowOpHelp(sender);
+					SendHelpMessage.ShowOpHelp(sender, main);
 					return true;
 				}
 
-				SendHelpMessage.ShowHelp(sender);
+				SendHelpMessage.ShowHelp(sender, main);
 				return true;
 			}
 
@@ -294,8 +306,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 						}
 					}
 
-					Integer b = new Integer (args[1]);
-					int block = (int) b;
+					int block = (int) new Integer (args[1]);
 					Material m = Material.getMaterial(block);
 
 					if (m == null)
@@ -346,8 +357,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 							return false;
 						}
 
-						Integer am = new Integer (args[1]);
-						int amount = (int) am;
+						int amount = (int) new Integer (args[1]);
 
 						for (int i = 1; i <= amount; i++)
 						{
@@ -363,8 +373,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					return true;
 				}
 
-				Integer b = new Integer (args[0]);
-				int block = (int) b;
+				int block = (int) new Integer (args[0]);
 				Material m = Material.getMaterial(block);
 
 				if (m == null)
@@ -386,8 +395,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 						return false;
 					}
 
-					Integer am = new Integer (args[1]);
-					int amount = (int) am;
+					int amount = (int) new Integer (args[1]);
 
 					for (int i = 1; i <= amount; i++)
 					{
@@ -415,15 +423,9 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				return true;
 			}
 
-			else if (args[0].equalsIgnoreCase("?") || args[0].equalsIgnoreCase("help"))
+			else if (args[0].equalsIgnoreCase("?") | args[0].equalsIgnoreCase("help"))
 			{
-				SendHelpMessage.ShowPdataHelp(sender);
-
-				for (String c : contents)
-				{
-					sender.sendMessage(C.BLUE + "- " + C.AQUA + c);
-				}
-
+				SendHelpMessage.ShowPdataHelp(sender, contents, main);
 				return true;
 			}
 
@@ -433,7 +435,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				return false;
 			}
 
-			Player player = Bukkit.getServer().getPlayer(args[1]);
+			Player player = getServer().getPlayer(args[1]);
 
 			//プレイヤー取得失敗
 			if (player == null)
@@ -476,7 +478,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				return true;
 			}
 
-			else if (args[0].equalsIgnoreCase("address") || args[0].equalsIgnoreCase("ip"))
+			else if (args[0].equalsIgnoreCase("address") | args[0].equalsIgnoreCase("ip"))
 			{
 				String address = player.getAddress().getAddress().toString().replace("/", "");
 
@@ -502,13 +504,12 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 			int i = 1;
 
-			for (Player p : Bukkit.getServer().getOnlinePlayers())
+			for (OfflinePlayer p : Bukkit.getServer().getOperators())
 			{
-				if (p.isOp())
-				{
-					sender.sendMessage(C.D_GREEN + "" + i + ": " + GetPlayerPrefix(p) + p.getName());
-					i++;
-				}
+				Player player = (Player) p;
+
+				sender.sendMessage(C.D_GREEN + "" + i + ": " + GetPlayerPrefix(player) + player.getName());
+				i++;
 			}
 
 			return true;
@@ -516,15 +517,15 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 		else if (cmd.getName().equalsIgnoreCase("rename"))
 		{
+			if (sender instanceof Player)
+			{
+				SendErrorMessage.SenderIsNotPlayer(sender);
+				return false;
+			}
+
 			if (args.length == 1)
 			{
 				Player player = (Player) sender;
-
-				if (player == null)
-				{
-					sender.sendMessage(prefix + C.BLUE + args[1] + C.RED + " isn't in this server!");
-					return false;
-				}
 
 				try
 				{
@@ -538,23 +539,31 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				}
 			}
 
-			return true;
+			SendErrorMessage.Failed(sender);
+			return false;
 		}
 
 		return false;
 	}
 
-
-	public String GetPlayerPrefix(Player player)
+	private String GetPlayerPrefix(Player player)
 	{
 		PermissionUser user = PermissionsEx.getUser(player);
 		String prefix = user.getPrefix();
-		prefix = prefix.replace("%world", player.getWorld().getName());
+
+		prefix = ChatFormatter(prefix, player);
+
 		return ChatColor.translateAlternateColorCodes('&', prefix);
 	}
 
+	private String ChatFormatter(String prefix2, Player player)
+	{
+		prefix = prefix.replace("%world", player.getWorld().getName());
+		return prefix;
+	}
+
 	@EventHandler
-	public void onPlayerLevelChangeEvent (PlayerLevelChangeEvent e)
+	private void onPlayerLevelChangeEvent (PlayerLevelChangeEvent e)
 	{
 		Player p = e.getPlayer();
 		String pn = p.getName();
@@ -563,27 +572,27 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 		if (newl > oldl)
 		{
-			Bukkit.broadcastMessage(prefix + GetPlayerPrefix(p) + pn + C.GOLD + " leveled up " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
+			getServer().broadcastMessage(prefix + GetPlayerPrefix(p) + pn + C.GOLD + " leveled up " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
 		}
 
 		else if (newl < oldl)
 		{
-			Bukkit.broadcastMessage(prefix + GetPlayerPrefix(p) + pn + C.GOLD + " leveled down " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
+			getServer().broadcastMessage(prefix + GetPlayerPrefix(p) + pn + C.GOLD + " leveled down " + C.RED + "Lv." + oldl + C.GOLD + " to " + C.RED + "Lv." + newl + C.GOLD + "!");
 		}
 	}
 
 	@EventHandler
-	public void onPlayerExpChangeEvent (PlayerExpChangeEvent e)
+	private void onPlayerExpChangeEvent (PlayerExpChangeEvent e)
 	{
 		Player p = e.getPlayer();
 		String pn = p.getName();
 		int exp = e.getAmount();
 
-		Bukkit.broadcastMessage(prefix + GetPlayerPrefix(p) + pn + C.GOLD + " got " + C.RED + exp + C.GOLD + " EXP!");
+		getServer().broadcastMessage(prefix + GetPlayerPrefix(p) + pn + C.GOLD + " got " + C.RED + exp + C.GOLD + " EXP!");
 	}
 
 	@EventHandler
-	public void onPlayerJoinEvent (PlayerJoinEvent e)
+	private void onPlayerJoinEvent (PlayerJoinEvent e)
 	{
 		Player player = e.getPlayer();
 
@@ -599,7 +608,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 	}
 
 	@EventHandler
-	public void onPlayerQuitEvent (PlayerQuitEvent e)
+	private void onPlayerQuitEvent (PlayerQuitEvent e)
 	{
 		Player player = e.getPlayer();
 
@@ -607,18 +616,18 @@ public class CIVNCraft extends JavaPlugin implements Listener
 	}
 
 	@EventHandler
-	public void onPlayerChangedWorldEvent (PlayerChangedWorldEvent e)
+	private void onPlayerChangedWorldEvent (PlayerChangedWorldEvent e)
 	{
 		Player player = e.getPlayer();
 		String from = e.getFrom().getName();
 		String to = player.getWorld().getName();
 
-		Bukkit.getServer().broadcastMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + " has moved from " + C.GREEN + from + C.GOLD + " to " + C.GREEN + to);
+		getServer().broadcastMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + " has moved from " + C.GREEN + from + C.GOLD + " to " + C.GREEN + to);
 	}
 
 	@SuppressWarnings("deprecation")
 	@EventHandler
-	public void onEntityDamageByEntityEvent (EntityDamageByEntityEvent e)
+	private void onEntityDamageByEntityEvent (EntityDamageByEntityEvent e)
 	{
 		if (!(e.getDamager() instanceof Player))
 		{

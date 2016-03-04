@@ -1,12 +1,13 @@
 package xyz.civn.civncraft;
 
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class SendErrorMessage extends JavaPlugin implements Listener
 {
-	public static String prefix = Prefix.prefix;
+	private static String prefix = Prefix.prefix;
 
 	public static void SenderIsNotPlayer(CommandSender sender)
 	{
@@ -42,5 +43,10 @@ public class SendErrorMessage extends JavaPlugin implements Listener
 	public static void PlayerIsNotIn(CommandSender sender, String[] args)
 	{
 		sender.sendMessage(prefix + C.BLUE + args[1] + C.RED + " isn't in this server!");
+	}
+
+	public static void WorldDoesNotExist(World world, CommandSender sender)
+	{
+		sender.sendMessage(prefix + C.BLUE + world.getName() + C.RED + " doesn't exist in this server!");
 	}
 }

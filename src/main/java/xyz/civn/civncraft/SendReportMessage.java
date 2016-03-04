@@ -9,7 +9,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class SendReportMessage extends JavaPlugin implements Listener
 {
-	public static String prefix = Prefix.prefix;
+	private static String prefix = Prefix.prefix;
+	private static String[] location = {"X: ", "Y: ", "Z: ", "Yaw: ", "Pitch: "};
 
 	public static void HubWasChanged(CommandSender sender)
 	{
@@ -32,17 +33,17 @@ public class SendReportMessage extends JavaPlugin implements Listener
 	{
 		sender.sendMessage(prefix);
 		sender.sendMessage(C.GOLD + "Author: " + C.RED + "" + C.B + "CIVN");
-		sender.sendMessage(C.GOLD + "Version: " + C.AQUA + "" + C.B + civnCraft.getDescription().getVersion());
-		sender.sendMessage(C.GOLD + "Website: " + C.BLUE + "" + C.B + civnCraft.getDescription().getWebsite());
+		sender.sendMessage(C.GOLD + "Version: " + C.AQUA + civnCraft.getDescription().getVersion());
+		sender.sendMessage(C.GOLD + "Website: " + C.BLUE + civnCraft.getDescription().getWebsite());
 	}
 
-	public static void ShowPlayerLocation(CommandSender sender, Player player, double[] l, String string)
+	public static void ShowPlayerLocation(CommandSender sender, Player player, double[] l, String playerprefix)
 	{
-		sender.sendMessage(prefix + string + player.getName() + C.D_GREEN + " is in");
-		sender.sendMessage(C.GOLD + "X: " + C.AQUA + l[0]);
-		sender.sendMessage(C.GOLD + "Y: " + C.AQUA + l[1]);
-		sender.sendMessage(C.GOLD + "Z: " + C.AQUA + l[2]);
-		sender.sendMessage(C.GOLD + "Yaw: " + C.AQUA + l[3]);
-		sender.sendMessage(C.GOLD + "Pitch: " + C.AQUA + l[4]);
+		sender.sendMessage(prefix + playerprefix + player.getName() + C.D_GREEN + " is in");
+
+		for (int i = 0; i <= 4; i++)
+		{
+			sender.sendMessage(C.GOLD + location[i] + C.AQUA + l[i]);
+		}
 	}
 }
