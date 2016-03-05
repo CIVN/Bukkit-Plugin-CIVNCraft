@@ -8,8 +8,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import xyz.civn.civncraft.Constant.C;
 import xyz.civn.civncraft.Constant.Prefix;
 
-
-
 public class SendErrorMessage extends JavaPlugin implements Listener
 {
 	private static String prefix = Prefix.prefix;
