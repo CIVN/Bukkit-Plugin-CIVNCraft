@@ -61,4 +61,19 @@ public class SendReportMessage extends JavaPlugin implements Listener
 	{
 		sender.sendMessage(player.getName() + " has no items.");
 	}
+
+	public static void ResetName(Player damager)
+	{
+		damager.sendMessage(prefix + C.RED + "You reset his name!");
+	}
+
+	public static void ChangedName(String name, Player damager)
+	{
+		damager.sendMessage(prefix + C.RED + "You changed his name! => " + name);
+	}
+
+	public static void MovedWorld(Player player, String from, String to, String playerprefix)
+	{
+		Bukkit.getServer().broadcastMessage(prefix + playerprefix + player.getName() + C.GOLD + " has moved from " + C.GREEN + from + C.GOLD + " to " + C.GREEN + to);
+	}
 }
