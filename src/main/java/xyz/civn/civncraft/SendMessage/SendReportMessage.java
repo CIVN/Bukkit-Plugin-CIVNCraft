@@ -17,16 +17,23 @@ public class SendReportMessage extends JavaPlugin implements Listener
 	private static String prefix = Prefix.prefix;
 	private static String[] location = {"X: ", "Y: ", "Z: ", "Yaw: ", "Pitch: "};
 
+	/*ハブの位置が変更された*/
 	public static void HubWasChanged(CommandSender sender)
 	{
-		Bukkit.getServer().broadcastMessage(prefix + C.AQUA + "Hub location has changed by " + C.RED + sender.getName() + C.AQUA + "!");
-		Bukkit.getServer().broadcastMessage(prefix + C.GREEN + "/hubloc " + C.AQUA + ">>> You can see now hub location!");
+		Bukkit.getServer().broadcastMessage(prefix + C.GOLD + "Hub location has changed by " + C.AQUA + sender.getName() + C.GOLD + ".");
 	}
 
+	/*プレイヤーがワールドを移動した*/
+	public static void MovedWorld(Player player, String from, String to, String playerprefix)
+	{
+		Bukkit.getServer().broadcastMessage(prefix + playerprefix + player.getName() + C.GOLD + " has moved from " + C.GREEN + from + C.GOLD + " to " + C.GREEN + to + C.GOLD + ".");
+	}
+
+	/*ハブの位置を表示*/
 	public static void ShowHubLocation(CommandSender sender, FileConfiguration cf)
 	{
 		sender.sendMessage(prefix);
-		sender.sendMessage(C.GREEN + "World: " + C.AQUA + cf.getString("hub.world"));
+		sender.sendMessage(C.GOLD + "World: " + C.AQUA + cf.getString("hub.world"));
 		sender.sendMessage(C.GOLD + "X: " + C.AQUA + cf.getDouble("hub.x"));
 		sender.sendMessage(C.GOLD + "Y: " + C.AQUA + cf.getDouble("hub.y"));
 		sender.sendMessage(C.GOLD + "Z: " + C.AQUA + cf.getDouble("hub.z"));
@@ -34,14 +41,16 @@ public class SendReportMessage extends JavaPlugin implements Listener
 		sender.sendMessage(C.GOLD + "Pitch: " + C.AQUA + (float) cf.getDouble("hub.pitch"));
 	}
 
-	public static void ShowInfomation(CommandSender sender, CIVNCraft civnCraft)
+	/*情報が表示*/
+	public static void ShowInfomation(CommandSender sender, CIVNCraft main)
 	{
 		sender.sendMessage(prefix);
 		sender.sendMessage(C.GOLD + "Author: " + C.RED + "" + C.B + "CIVN");
-		sender.sendMessage(C.GOLD + "Version: " + C.AQUA + civnCraft.getDescription().getVersion());
-		sender.sendMessage(C.GOLD + "Website: " + C.BLUE + civnCraft.getDescription().getWebsite());
+		sender.sendMessage(C.GOLD + "Version: " + C.AQUA + main.getDescription().getVersion());
+		sender.sendMessage(C.GOLD + "Website: " + C.BLUE + main.getDescription().getWebsite());
 	}
 
+	/*プレイヤーの位置を表示*/
 	public static void ShowPlayerLocation(CommandSender sender, Player player, double[] l, String playerprefix)
 	{
 		sender.sendMessage(prefix + playerprefix + player.getName() + C.GOLD + " is in");
@@ -52,28 +61,34 @@ public class SendReportMessage extends JavaPlugin implements Listener
 		}
 	}
 
+	/*TODO: 他の情報も表示できるようにする*/
+	/*インベントリのアイテムと個数を表示*/
 	public static void ShowItem(CommandSender sender, ItemStack is, int i)
 	{
-		sender.sendMessage(i + ": " + is.getType().name() + " -" + is.getAmount());
+		sender.sendMessage(C.GOLD + String.valueOf(i) + ": " + C.AQUA + is.getType().name() + C.GREEN + " -" + is.getAmount());
 	}
 
-	public static void HasNoItems(CommandSender sender, Player player)
+	/*プレイヤーがアイテムを一つも持っていない*/
+	public static void HasNoItems(CommandSender sender, Player player, String playerprefix)
 	{
-		sender.sendMessage(player.getName() + " has no items.");
+		sender.sendMessage(playerprefix + player.getName() + C.GOLD + " has no items.");
 	}
 
+	/*エンティティの名前をリセットした*/
 	public static void ResetName(Player damager)
 	{
-		damager.sendMessage(prefix + C.RED + "You reset his name!");
+		damager.sendMessage(prefix + C.GOLD + "You reset his name.");
 	}
 
+	/*エンティティの名前を変更した*/
 	public static void ChangedName(String name, Player damager)
 	{
-		damager.sendMessage(prefix + C.RED + "You changed his name! => " + name);
+		damager.sendMessage(prefix + C.GOLD + "You changed his name. => " + C.AQUA + name);
 	}
 
-	public static void MovedWorld(Player player, String from, String to, String playerprefix)
+	/*エンティティの名前を変更した => Grumm or Dinnerbone*/
+	public static void FlippedEntity(Player damager)
 	{
-		Bukkit.getServer().broadcastMessage(prefix + playerprefix + player.getName() + C.GOLD + " has moved from " + C.GREEN + from + C.GOLD + " to " + C.GREEN + to);
+		damager.sendMessage(prefix + C.GOLD + "You flipped over him.");
 	}
 }

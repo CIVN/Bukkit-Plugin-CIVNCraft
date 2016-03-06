@@ -3,7 +3,7 @@ description: This plugin has all of around the world.
 author: CIVN
 website: https://twitter.com/oktm_style/
 main: xyz.civn.civncraft.CIVNCraft
-version: 1.2
+version: 1.3
 prefix: [CIVNCraft]
 commands:
    hub:
@@ -54,18 +54,12 @@ commands:
       usage: /<command>
       permission: civncraft.ops
       permission-message: You don't have permission <permission>!
-   rename:
-      description: Changing an item in your hand.
-      aliases: rn
-      usage: /<command>
-      permission: civncraft.rename
-      permission-message: You don't have permission <permission>!
-   getlocation:
-      description: Getting your country name.
-      aliases: gl
-      usage: /<command>
-      permission: civncraft.getlocation
-      permission-message: You don't have permission <permission>!
+###   rename:
+###      description: Changing an item in your hand.
+###      aliases: rn
+###      usage: /<command>
+###      permission: civncraft.rename
+###      permission-message: You don't have permission <permission>!
    copyinventory:
       description: Copying inventory command.
       aliases: [copyinv, ci, cinv]
@@ -108,12 +102,9 @@ permissions:
    civncraft.ops:
      description: Showing operators command.
      default: true
-   civncraft.rename:
-     description: Changing an item in your hand.
-     default: op
-   civncraft.getlocation:
-     description: Getting your country name.
-     default: op
+###   civncraft.rename:
+###     description: Changing an item in your hand.
+###     default: op
    civncraft.copyinventory:
      description: Copying inventory command.
      default: op

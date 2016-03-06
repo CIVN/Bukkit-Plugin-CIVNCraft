@@ -8,8 +8,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import xyz.civn.civncraft.Constant.C;
 import xyz.civn.civncraft.Constant.Prefix;
 
-
-
 public class SendErrorMessage extends JavaPlugin implements Listener
 {
 	private static String prefix = Prefix.prefix;
@@ -35,14 +33,14 @@ public class SendErrorMessage extends JavaPlugin implements Listener
 	/*ハブがセットされていない*/
 	public static void HubWasNotSet(CommandSender sender)
 	{
-		sender.sendMessage(Prefix.prefix + C.RED + "Hub wasn't set!");
-		sender.sendMessage(Prefix.prefix + C.RED + "Please set hub!");
+		sender.sendMessage(prefix + C.RED + "Hub wasn't set!");
+		sender.sendMessage(prefix + C.RED + "Please set hub!");
 	}
 
 	/*存在しない*/
-	public static void DoesNotExist(CommandSender sender, String[] args)
+	public static void WorldDoesNotExistInServer(CommandSender sender, String[] args)
 	{
-		sender.sendMessage(prefix + C.BLUE + args[0] + C.RED + " doesn't exist!");
+		sender.sendMessage(prefix + C.GREEN + args[0] + C.RED + " doesn't exist!");
 	}
 
 	/*pdataコンテンツ内に存在しない*/
@@ -66,6 +64,6 @@ public class SendErrorMessage extends JavaPlugin implements Listener
 	/*ワールドがサーバーに存在しない*/
 	public static void WorldDoesNotExist(World world, CommandSender sender)
 	{
-		sender.sendMessage(prefix + C.BLUE + world.getName() + C.RED + " doesn't exist in this server!");
+		sender.sendMessage(prefix + C.GREEN + world.getName() + C.RED + " doesn't exist in this server!");
 	}
 }

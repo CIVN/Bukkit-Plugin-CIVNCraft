@@ -1,6 +1,4 @@
 # This is config file!
-
-###These are hub location.
 hub:
   world:
   x:
@@ -8,14 +6,3 @@ hub:
   z:
   yaw:
   pitch:
-
-Message:
-  JoinMessage: %prefix%player &6has joined.
-  QuitMessage: %prefix%player &6has left.
-
-EventMessage
-  MovedWorld: true
-  ChangedLevel: true
-  ChangedExp: true
-
-EasyNameChanger: true

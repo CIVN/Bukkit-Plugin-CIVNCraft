@@ -49,10 +49,4 @@ public class SendHelpMessage extends JavaPlugin implements Listener
 			sender.sendMessage(C.BLUE + "- " + C.AQUA + c);
 		}
 	}
-
-	public static void ShowAsibaHelp(CommandSender sender)
-	{
-		sender.sendMessage(prefix);
-		sender.sendMessage(C.GOLD + "/asiba help: " + C.BLUE + "Show asiba help.");
-	}
 }
