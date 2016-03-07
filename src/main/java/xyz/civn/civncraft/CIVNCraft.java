@@ -1,5 +1,8 @@
 package xyz.civn.civncraft;
 
+import java.io.File;
+import java.io.IOException;
+
 import net.md_5.bungee.api.ChatColor;
 
 import org.bukkit.Location;
@@ -9,6 +12,7 @@ import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -19,29 +23,40 @@ import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import ru.tehkode.permissions.bukkit.PermissionsEx;
 import xyz.civn.civncraft.Constant.C;
 import xyz.civn.civncraft.Constant.Prefix;
-import xyz.civn.civncraft.SendMessage.SendErrorMessage;
-import xyz.civn.civncraft.SendMessage.SendHelpMessage;
-import xyz.civn.civncraft.SendMessage.SendReportMessage;
+import xyz.civn.civncraft.SendMessage.Send;
 
 public class CIVNCraft extends JavaPlugin implements Listener
 {
+	private static File file = new File("plugins/CIVNCraft/ips.yml");
 	private static String prefix = Prefix.prefix;
-	private static String[] contents = {"location", "level", "address", "gamemode", "health", "enderchest", "inventory"};
 
 	private CIVNCraft main = this;
 	private FileConfiguration cf = getConfig();
+	private YamlConfiguration ips = YamlConfiguration.loadConfiguration(file);
 
 	@Override
 	public void onEnable()
 	{
-		saveDefaultConfig();
+		this.saveDefaultConfig();
 		getServer().getPluginManager().registerEvents(this, this);
+
+		try
+		{
+			CreateIPS();
+		}
+
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -51,43 +66,60 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		saveConfig();
 	}
 
-	/*
-	private static void WriteIP(String ip)
+	public void onReload()
 	{
-		File file = new File("IPAdress.txt");
-		FileWriter fw;
+		reloadConfig();
+		saveConfig();
+
+		this.saveDefaultConfig();
+		getServer().getPluginManager().registerEvents(this, this);
 
 		try
 		{
-			if (CheckFile(file))
-			{
-				fw = new FileWriter(file);
-				fw.write("\n" + ip);
-				fw.close();
-			}
+			CreateIPS();
 		}
 
 		catch (IOException e)
 		{
-			return;
+			e.printStackTrace();
 		}
 	}
-	*/
 
-	/*
-	private static boolean CheckFile(File file)
+	private static void CreateIPS() throws IOException
 	{
-	    if (file.exists())
-	    {
-	      if (file.isFile() && file.canWrite())
-	      {
-	        return true;
-	      }
-	    }
+		if (file.exists())
+		{
+			try
+			{
+				file.createNewFile();
+			}
 
-	    return false;
+			catch (Exception e)
+			{
+				Send.FailedCreateFile();
+				return;
+			}
+		}
 	}
-	*/
+
+	private void WriteIP(Player player, String ip, String hostname) throws IOException
+	{
+		try
+		{
+			ips.save(file);
+		}
+
+		catch(Exception e)
+		{
+			Send.FailedCreateFile();
+			return;
+		}
+
+		ips.createSection(player.getName() + "." + "IPAddress");
+		ips.set(player.getName() + "." + "IPAddress", ip);
+		ips.set(player.getName() + "." + "HostName", hostname);
+		ips.save(file);
+	}
 
 	private static String GetPlayerPrefix(Player player)
 	{
@@ -119,6 +151,18 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		}
 
 		return ChatColor.translateAlternateColorCodes('&', text);
+	}
+
+	/*インベントリのアイテムと個数を表示*/
+	@SuppressWarnings("deprecation")
+	private static void ShowItem(CommandSender sender, ItemStack is, int i)
+	{
+		String count = String.valueOf(i);
+		String materialname = is.getType().name();
+		int materialid = is.getTypeId();
+		int amount = is.getAmount();
+
+		sender.sendMessage(C.GOLD + count + ": " + C.AQUA + materialname + C.D_GREEN + "   -ID: " + C.GREEN + materialid + C.D_GREEN + "   -Amount: " + C.GREEN + amount);
 	}
 
 	@EventHandler
@@ -165,7 +209,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 	}
 
 	@EventHandler
-	private void onPlayerJoinEvent (PlayerJoinEvent e)
+	private void onPlayerJoinEvent (PlayerJoinEvent e) throws IOException
 	{
 		/*
 		if (cf.getBoolean("eventMessage.joinmessage") == false)
@@ -178,6 +222,8 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 		e.setJoinMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + " has joined.");
 
+		String ip = player.getAddress().getAddress().toString().replace("/", "");
+
 		for (Player players: getServer().getOnlinePlayers())
 		{
 			if (players.isOp())
@@ -186,7 +232,8 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			}
 		}
 
-		//WriteIP(player.getAddress().getAddress().toString().replace("/", ""));
+
+		WriteIP(player, ip, player.getAddress().getHostName());
 	}
 
 	@EventHandler
@@ -218,7 +265,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		String from = e.getFrom().getName();
 		String to = player.getWorld().getName();
 
-		SendReportMessage.MovedWorld(player, from, to, GetPlayerPrefix(player));
+		getServer().broadcastMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + " has moved from " + C.GREEN + from + C.GOLD + " to " + C.GREEN + to + C.GOLD + ".");
 	}
 
 	@EventHandler
@@ -250,12 +297,12 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 			if (name == null)
 			{
-				SendReportMessage.ResetName(damager);
+				damager.sendMessage(prefix + C.GOLD + "You reset his name.");
 			}
 
 			else
 			{
-				SendReportMessage.ChangedName(name, damager);
+				damager.sendMessage(prefix + C.GOLD + "You changed his name. => " + C.AQUA + name);
 			}
 
 			return;
@@ -270,13 +317,13 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		{
 			if (args.length != 0)
 			{
-				SendErrorMessage.ExtraArguments(sender);
+				Send.ExtraArguments(sender);
 				return false;
 			}
 
 			if (!(sender instanceof Player))
 			{
-				SendErrorMessage.SenderIsNotPlayer(sender);
+				Send.SenderIsNotPlayer(sender);
 				return false;
 			}
 
@@ -295,7 +342,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			//ハブ未設定
 			catch (Exception e)
 			{
-				SendErrorMessage.HubWasNotSet(sender);
+				Send.HubWasNotSet(sender);
 
 				cf.set("hub.world", "");
 				cf.set("hub.x", 0);
@@ -319,7 +366,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			//サーバーにワールドが無い
 			if (world == null)
 			{
-				SendErrorMessage.WorldDoesNotExist(world, sender);
+				Send.WorldDoesNotExist(world, sender);
 				return false;
 			}
 
@@ -335,7 +382,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			{
 				if (!(sender instanceof Player))
 				{
-					SendErrorMessage.SenderIsNotPlayer(sender);
+					Send.SenderIsNotPlayer(sender);
 					return false;
 				}
 
@@ -349,7 +396,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				cf.set("hub.pitch", p.getLocation().getPitch());
 				saveConfig();
 
-				SendReportMessage.HubWasChanged(sender);
+				getServer().broadcastMessage(prefix + C.GOLD + "Hub location has changed by " + C.AQUA + sender.getName() + C.GOLD + ".");
 				return true;
 			}
 
@@ -361,7 +408,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				//サーバーにワールドが無い
 				if (w == null)
 				{
-					SendErrorMessage.WorldDoesNotExistInServer(sender, args);
+					Send.WorldDoesNotExistInServer(sender, args);
 					return false;
 				}
 
@@ -379,7 +426,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				//変換に失敗
 				catch (Exception e)
 				{
-					SendErrorMessage.Failed(sender);
+					Send.Failed(sender);
 					return false;
 				}
 
@@ -389,7 +436,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				cf.set("hub.z", Double.parseDouble (args[3]));
 				saveConfig();
 
-				SendReportMessage.HubWasChanged(sender);
+				getServer().broadcastMessage(prefix + C.GOLD + "Hub location has changed by " + C.AQUA + sender.getName() + C.GOLD + ".");
 				return true;
 			}
 
@@ -401,7 +448,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				//サーバーにワールドが無い
 				if (w == null)
 				{
-					SendErrorMessage.WorldDoesNotExistInServer(sender, args);
+					Send.WorldDoesNotExistInServer(sender, args);
 					return false;
 				}
 
@@ -419,7 +466,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				//変換に失敗
 				catch (Exception e)
 				{
-					SendErrorMessage.Failed(sender);
+					Send.Failed(sender);
 					return false;
 				}
 
@@ -431,7 +478,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				cf.set("hub.pitch", Double.parseDouble (args[5])); //ホントはFloat
 				saveConfig();
 
-				SendReportMessage.HubWasChanged(sender);
+				getServer().broadcastMessage(prefix + C.GOLD + "Hub location has changed by " + C.AQUA + sender.getName() + C.GOLD + ".");
 				return true;
 			}
 
@@ -440,7 +487,13 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 		else if (cmd.getName().equalsIgnoreCase("hubloc"))
 		{
-			SendReportMessage.ShowHubLocation(sender, cf);
+			sender.sendMessage(prefix);
+			sender.sendMessage(C.GOLD + "World: " + C.AQUA + cf.getString("hub.world"));
+			sender.sendMessage(C.GOLD + "X: " + C.AQUA + cf.getDouble("hub.x"));
+			sender.sendMessage(C.GOLD + "Y: " + C.AQUA + cf.getDouble("hub.y"));
+			sender.sendMessage(C.GOLD + "Z: " + C.AQUA + cf.getDouble("hub.z"));
+			sender.sendMessage(C.GOLD + "Yaw: " + C.AQUA + (float) cf.getDouble("hub.yaw"));
+			sender.sendMessage(C.GOLD + "Pitch: " + C.AQUA + (float) cf.getDouble("hub.pitch"));
 			return true;
 		}
 
@@ -448,7 +501,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		{
 			if (!(sender instanceof Player))
 			{
-				SendErrorMessage.SenderIsNotPlayer(sender);
+				Send.SenderIsNotPlayer(sender);
 				return false;
 			}
 
@@ -461,7 +514,10 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		{
 			if (args.length == 0)
 			{
-				SendReportMessage.ShowInfomation(sender, main);
+				sender.sendMessage(prefix);
+				sender.sendMessage(C.GOLD + "Author: " + C.RED + "" + C.B + "CIVN");
+				sender.sendMessage(C.GOLD + "Version: " + C.AQUA + main.getDescription().getVersion());
+				sender.sendMessage(C.GOLD + "Website: " + C.BLUE + main.getDescription().getWebsite());
 				return true;
 			}
 
@@ -471,11 +527,25 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 				if (p.isOp())
 				{
-					SendHelpMessage.ShowOpHelp(sender, main);
+					sender.sendMessage(prefix);
+					sender.sendMessage(C.GOLD + "/civn: " + C.AQUA + main.getDescription().getCommands().get("civn").get("description"));
+					sender.sendMessage(C.GOLD + "/hub: " + C.AQUA + main.getDescription().getCommands().get("hub").get("description"));
+					sender.sendMessage(C.GOLD + "/sethub: " + C.AQUA + main.getDescription().getCommands().get("sethub").get("description"));
+					sender.sendMessage(C.GOLD + "/sethub <World> <X> <Y> <Z> or");
+					sender.sendMessage(C.GOLD + "/sethub <World> <X> <Y> <Z> <YAW> <PITCH>: " + C.AQUA + main.getDescription().getCommands().get("sethub").get("description"));
+					sender.sendMessage(C.GOLD + "/hubl: " + C.AQUA + main.getDescription().getCommands().get("hubloc").get("description"));
+					sender.sendMessage(C.GOLD + "/seppuku: " + C.AQUA + main.getDescription().getCommands().get("seppuku").get("description"));
+					sender.sendMessage(C.GOLD + "/asiba <BlockID> <height>: " + C.AQUA + main.getDescription().getCommands().get("asiba").get("description"));
+					sender.sendMessage(C.GOLD + "/asiba to <BlockID>: " + C.AQUA + main.getDescription().getCommands().get("asiba").get("description"));
 					return true;
 				}
 
-				SendHelpMessage.ShowHelp(sender, main);
+				sender.sendMessage(prefix);
+				sender.sendMessage(C.GOLD + "/civn: " + C.AQUA + main.getDescription().getCommands().get("civn").get("description"));
+				sender.sendMessage(C.GOLD + "/hub: " + C.AQUA + main.getDescription().getCommands().get("hub").get("description"));
+				sender.sendMessage(C.GOLD + "/asiba <BlockID> <height>: " + C.AQUA + main.getDescription().getCommands().get("asiba").get("description"));
+				sender.sendMessage(C.GOLD + "/asiba to <BlockID>: " + C.AQUA + main.getDescription().getCommands().get("asiba").get("description"));
+				sender.sendMessage(C.GOLD + "/seppuku: " + C.AQUA + main.getDescription().getCommands().get("seppuku").get("description"));
 				return true;
 			}
 
@@ -493,13 +563,13 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		{
 			if (!(sender instanceof Player))
 			{
-				SendErrorMessage.SenderIsNotPlayer(sender);
+				Send.SenderIsNotPlayer(sender);
 				return false;
 			}
 
 			if (args.length != 1 && args.length != 2)
 			{
-				SendErrorMessage.Failed(sender);
+				Send.Failed(sender);
 				return false;
 			}
 
@@ -522,7 +592,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 					if (m == null)
 					{
-						SendErrorMessage.Failed(sender);
+						Send.Failed(sender);
 						return false;
 					}
 
@@ -535,7 +605,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 				if (m == null)
 				{
-					SendErrorMessage.Failed(sender);
+					Send.Failed(sender);
 					return false;
 				}
 
@@ -552,7 +622,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				{
 					if (args[1] == null)
 					{
-						SendErrorMessage.ExtraArguments(sender);
+						Send.ExtraArguments(sender);
 						return false;
 					}
 
@@ -615,7 +685,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 				catch (Exception e)
 				{
-					SendErrorMessage.Failed(sender);
+					Send.Failed(sender);
 					return false;
 				}
 
@@ -632,7 +702,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 					if (m == null)
 					{
-						SendErrorMessage.Failed(sender);
+						Send.Failed(sender);
 						return false;
 					}
 
@@ -671,13 +741,26 @@ public class CIVNCraft extends JavaPlugin implements Listener
 				/* [/pdata help]*/
 				if (args[0].equalsIgnoreCase("?") | args[0].equalsIgnoreCase("help"))
 				{
-					SendHelpMessage.ShowPdataHelp(sender, contents, main);
+					String[] contents = {"location", "level", "address", "gamemode", "health", "enderchest", "inventory"};
+
+					sender.sendMessage(prefix);
+					sender.sendMessage(C.D_GREEN + "/pdata help: " + C.BLUE + "Show pdata help.");
+					sender.sendMessage(C.D_GREEN + "/ops: " + C.BLUE + main.getDescription().getCommands().get("ops").get("description"));
+					sender.sendMessage(C.D_GREEN + "/pdata <Content> <PlayerName>: " + C.BLUE + main.getDescription().getCommands().get("pdata").get("description"));
+					sender.sendMessage(C.GRAY + "====================");
+					sender.sendMessage(C.D_AQUA + "" + C.B + "Contents");
+
+					for (String c : contents)
+					{
+						sender.sendMessage(C.BLUE + "- " + C.AQUA + c);
+					}
+
 					return true;
 				}
 
 				else
 				{
-					SendErrorMessage.Failed(sender);
+					Send.Failed(sender);
 					return false;
 				}
 			}
@@ -689,7 +772,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 				if (player == null)
 				{
-					SendErrorMessage.PlayerIsNotIn(sender, args);
+					Send.PlayerIsNotIn(sender, args);
 					return false;
 				}
 
@@ -708,9 +791,16 @@ public class CIVNCraft extends JavaPlugin implements Listener
 						case "location":
 						{
 							Location location = player.getLocation();
+							String[] loc = {"X: ", "Y: ", "Z: ", "Yaw: ", "Pitch: "};
 							double[] l = {location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()};
 
-							SendReportMessage.ShowPlayerLocation(sender, player, l, GetPlayerPrefix(player));
+							sender.sendMessage(prefix + GetPlayerPrefix(player) + player.getName() + C.GOLD + " is in");
+
+							for (int i = 0; i <= 4; i++)
+							{
+								sender.sendMessage(C.GOLD + loc[i] + C.AQUA + l[i]);
+							}
+
 							return true;
 						}
 
@@ -757,7 +847,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 							{
 								try
 								{
-									SendReportMessage.ShowItem(sender, is, i);
+									ShowItem(sender, is, i);
 								}
 
 								catch (Exception e)
@@ -770,7 +860,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 							if (i == 1)
 							{
-								SendReportMessage.HasNoItems(sender, player, GetPlayerPrefix(player));
+								sender.sendMessage(GetPlayerPrefix(player) + player.getName() + C.GOLD + " has no items.");
 							}
 
 							return true;
@@ -787,7 +877,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 							{
 								try
 								{
-									SendReportMessage.ShowItem(sender, is, i);
+									ShowItem(sender, is, i);
 								}
 
 								catch (Exception e)
@@ -800,7 +890,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 							if (i == 1)
 							{
-								SendReportMessage.HasNoItems(sender, player, GetPlayerPrefix(player));
+								sender.sendMessage(GetPlayerPrefix(player) + player.getName() + C.GOLD + " has no items.");
 							}
 
 							return true;
@@ -817,7 +907,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 							{
 								try
 								{
-									SendReportMessage.ShowItem(sender, is, i);
+									ShowItem(sender, is, i);
 								}
 
 								catch (Exception e)
@@ -830,7 +920,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 							if (i == 1)
 							{
-								SendReportMessage.HasNoItems(sender, player, GetPlayerPrefix(player));
+								sender.sendMessage(GetPlayerPrefix(player) + player.getName() + C.GOLD + " has no items.");
 							}
 
 							return true;
@@ -847,7 +937,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 							{
 								try
 								{
-									SendReportMessage.ShowItem(sender, is, i);
+									ShowItem(sender, is, i);
 								}
 
 								catch (Exception e)
@@ -860,7 +950,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 							if (i == 1)
 							{
-								SendReportMessage.HasNoItems(sender, player, GetPlayerPrefix(player));
+								sender.sendMessage(GetPlayerPrefix(player) + player.getName() + C.GOLD + " has no items.");
 							}
 
 							return true;
@@ -868,7 +958,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 						default:
 						{
-							SendErrorMessage.DoesNotExistInContents(sender, args);
+							Send.DoesNotExistInContents(sender, args);
 							return false;
 						}
 					}
@@ -883,8 +973,10 @@ public class CIVNCraft extends JavaPlugin implements Listener
 		{
 			if (args.length == 0)
 			{
-				//TODO: コマンドのヘルプとか
-				return false;
+				sender.sendMessage(prefix);
+				sender.sendMessage(C.GOLD + "/copyinventory <From>");
+				sender.sendMessage(C.GOLD + "/copyinventory <From> <To>");
+				return true;
 			}
 
 			else if (args.length == 1)
@@ -894,29 +986,37 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 				if (to == from)
 				{
-					SendErrorMessage.Failed(sender);
+					Send.Failed(sender);
 					return false;
 				}
 
 				else if (from == null)
 				{
-					SendErrorMessage.PlayerIsNotIn(sender, args);
+					Send.PlayerIsNotIn(sender, args);
 					return false;
 				}
 
-				//TODO: 片っ端から追加されちゃうのでそこは考えよう
+				//TODO: 修正済。未確認。
 				to.getInventory().clear();
 
-				for (ItemStack is: from.getInventory())
+				Inventory frominv = from.getInventory();
+				int i = 0;
+
+				for (ItemStack is: frominv)
 				{
 					try
 					{
-						to.getInventory().addItem(is);
+						to.getInventory().setItem(i, is);
 					}
 
 					catch (Exception e)
 					{
 						continue;
+					}
+
+					finally
+					{
+						i++;
 					}
 				}
 
@@ -930,7 +1030,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 				if (to == from)
 				{
-					SendErrorMessage.Failed(sender);
+					Send.Failed(sender);
 					return false;
 				}
 
@@ -946,19 +1046,27 @@ public class CIVNCraft extends JavaPlugin implements Listener
 					return false;
 				}
 
-				//TODO: 片っ端から追加されちゃうのでそこは考えよう
+				//TODO: 修正済。未確認。
 				to.getInventory().clear();
 
-				for (ItemStack is: from.getInventory())
+				Inventory frominv = from.getInventory();
+				int i = 0;
+
+				for (ItemStack is: frominv)
 				{
 					try
 					{
-						to.getInventory().addItem(is);
+						to.getInventory().setItem(i, is);
 					}
 
 					catch (Exception e)
 					{
 						continue;
+					}
+
+					finally
+					{
+						i++;
 					}
 				}
 
@@ -967,7 +1075,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 
 			else
 			{
-				//TODO
+				Send.Failed(sender);
 				return false;
 			}
 		}
@@ -982,7 +1090,7 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			{
 				if (p.isOp())
 				{
-					sender.sendMessage(C.D_GREEN + "" + i + ": " + p.getName());
+					sender.sendMessage(C.D_GREEN + "" + i + ": " + C.BLUE + p.getName());
 					i++;
 				}
 			}
@@ -990,35 +1098,39 @@ public class CIVNCraft extends JavaPlugin implements Listener
 			return true;
 		}
 
-		/*
 		else if (cmd.getName().equalsIgnoreCase("rename"))
 		{
 			if (!(sender instanceof Player))
 			{
-				SendErrorMessage.SenderIsNotPlayer(sender);
+				Send.SenderIsNotPlayer(sender);
 				return false;
 			}
 
 			if (args.length == 1)
 			{
 				Player player = (Player) sender;
+				ItemStack is = player.getInventory().getItemInMainHand();
+				ItemMeta im = is.getItemMeta();
 
 				try
 				{
-					player.getItemInHand().getItemMeta().setDisplayName(args[0]);
+					im.setDisplayName(args[0]);
+					is.setItemMeta(im);
 				}
 
 				catch (Exception e)
 				{
-					SendErrorMessage.Failed(sender);
+					Send.Failed(sender);
 					return false;
 				}
+
+				sender.sendMessage(prefix + C.GOLD + "You changed the item name. => " + args[0]);
+				return true;
 			}
 
-			SendErrorMessage.Failed(sender);
+			Send.ExtraArguments(sender);
 			return false;
 		}
-		*/
 
 		return false;
 	}
