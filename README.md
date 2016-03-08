@@ -9,7 +9,7 @@ Please report me when you found mistakes from this plugin on Twitter and more.
 
 And I sometimes upload a video to Youtube about my plugins.
 
-Please subscribe my channnel.
+Please subscribe my channel.
 
 ### In Japanese
 
